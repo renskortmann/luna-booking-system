@@ -1,0 +1,243 @@
+/* LUNA OD6 booking system. One stylesheet, no framework, no external fonts. */
+
+:root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --ink: #1c1f23;
+    --ink-muted: #5d6673;
+    --line: #d8dde4;
+    --accent: #00857d;          /* teal, distinct from the "someone else" grey */
+    --accent-ink: #ffffff;
+    --own: #00857d;
+    --other: #8892a0;
+    --danger: #a4291f;
+    --warn-bg: #fff4e5;
+    --ok-bg: #e8f5ee;
+    --err-bg: #fdecea;
+    --radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #14171a;
+        --surface: #1d2126;
+        --ink: #e8eaed;
+        --ink-muted: #9aa4b0;
+        --line: #333a42;
+        --accent: #35b3a8;
+        --accent-ink: #06221f;
+        --own: #35b3a8;
+        --other: #6d7783;
+        --danger: #e8776c;
+        --warn-bg: #3a2f1c;
+        --ok-bg: #17322a;
+        --err-bg: #3a1f1d;
+    }
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ------------------------------------------------------------- chrome ---- */
+.topbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+}
+
+.brand { font-weight: 600; color: var(--ink); text-decoration: none; }
+
+.topbar nav { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.topbar .who { color: var(--ink-muted); }
+
+main { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+
+footer {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.card.narrow { max-width: 26rem; margin-inline: auto; }
+
+h1 { font-size: 1.4rem; margin: 0 0 0.75rem; }
+h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+h2:first-of-type { margin-top: 0.5rem; }
+h3 { font-size: 0.95rem; margin: 1.25rem 0 0.25rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+pre { overflow-x: auto; background: var(--bg); padding: 0.6rem 0.8rem; border-radius: var(--radius); }
+
+.muted { color: var(--ink-muted); }
+.small { font-size: 0.85rem; }
+.nowrap { white-space: nowrap; }
+
+/* -------------------------------------------------------------- forms ---- */
+label { display: block; margin: 0.75rem 0 0.25rem; font-weight: 500; }
+label.check { display: flex; gap: 0.4rem; align-items: center; font-weight: 400; }
+
+input[type="text"], input[type="password"], input[type="number"],
+input[type="time"], input[type="datetime-local"], select {
+    width: 100%;
+    max-width: 24rem;
+    padding: 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+}
+
+fieldset {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin: 1rem 0;
+    padding: 0.5rem 1rem 1rem;
+}
+
+legend { padding: 0 0.4rem; font-weight: 600; }
+
+.checkrow { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+button, .button {
+    display: inline-block;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+button.primary, .button.primary {
+    margin-top: 1rem;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+}
+
+.button.block { display: block; text-align: center; }
+
+button.link {
+    border: 0;
+    background: none;
+    padding: 0.15rem 0;
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+button.danger, button.link.danger { color: var(--danger); }
+
+form.inline { display: inline; }
+form.row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; }
+form.row label { margin: 0 0 0.2rem; }
+form.row > * { flex: 0 1 auto; }
+form.row button.primary { margin-top: 0; }
+
+.divider { text-align: center; color: var(--ink-muted); margin: 1rem 0 0.5rem; }
+
+/* ------------------------------------------------------------ messages --- */
+.flash, .alert {
+    padding: 0.65rem 0.9rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    margin: 0 0 1rem;
+}
+
+.flash-success { background: var(--ok-bg); }
+.flash-info { background: var(--surface); }
+.alert, .flash-error { background: var(--err-bg); }
+.alert-inline { color: var(--danger); font-size: 0.85rem; }
+
+/* -------------------------------------------------------------- tables --- */
+table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-muted); }
+.row-suspended td, .row-cancelled td { opacity: 0.55; }
+td.actions { white-space: nowrap; }
+td.detail { font-size: 0.8rem; color: var(--ink-muted); word-break: break-word; max-width: 22rem; }
+
+.wide { display: block; overflow-x: auto; }
+
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem; margin: 0; }
+dl.facts dt { color: var(--ink-muted); }
+dl.facts dd { margin: 0; }
+
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; }
+
+/* ------------------------------------------------------------ calendar --- */
+.calendar-head { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: flex-start; }
+
+.legend { display: flex; gap: 1rem; list-style: none; margin: 0; padding: 0; font-size: 0.85rem; }
+.swatch { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 2px; vertical-align: middle; }
+.swatch.own { background: var(--own); }
+.swatch.other { background: var(--other); }
+
+.rules-summary { margin: 0.5rem 0 1rem; }
+
+#calendar { margin-top: 0.5rem; }
+
+/* Own bookings carry the accent colour; everyone else's are neutral, so the
+   calendar answers "what is mine" at a glance. */
+.fc-event.booking-own { background: var(--own); border-color: var(--own); color: #fff; }
+.fc-event.booking-other { background: var(--other); border-color: var(--other); color: #fff; }
+
+dialog {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    max-width: 28rem;
+    width: calc(100% - 2rem);
+}
+
+dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
+dialog menu { display: flex; gap: 0.5rem; justify-content: flex-end; margin: 1.25rem 0 0; padding: 0; }
+dialog menu button.primary { margin-top: 0; }
+
+/* -------------------------------------------------------------- extras --- */
+.invite { border: 1px solid var(--accent); border-radius: var(--radius); padding: 0.75rem 1rem; margin: 1rem 0; }
+.invite-link { width: 100%; max-width: none; font-family: ui-monospace, monospace; font-size: 0.85rem; }
+
+.admin-nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+
+.qr { margin: 1rem 0; max-width: 240px; }
+.qr svg { width: 100%; height: auto; background: #fff; padding: 0.5rem; border-radius: var(--radius); }
+
+.secret { display: inline-block; padding: 0.2rem 0.4rem; background: var(--bg); border-radius: 3px; word-break: break-all; }
+
+ul.codes { columns: 2; list-style: none; padding: 0; }
+ul.codes li { margin: 0.2rem 0; }
+
+.inline-edit { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.inline-edit input { max-width: 11rem; font-size: 0.85rem; padding: 0.3rem; }
+
+.pager { display: flex; gap: 1rem; align-items: center; }
+
+@media (max-width: 640px) {
+    form.row { flex-direction: column; align-items: stretch; }
+    dl.facts { grid-template-columns: 1fr; }
+}

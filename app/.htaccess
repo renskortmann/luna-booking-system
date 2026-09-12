@@ -1,0 +1,10 @@
+# Defence in depth: if the application directory ends up inside the document
+# root, refuse to serve any of it. The rewrite rule in public_html/.htaccess
+# blocks it too; this file also covers servers that reach files here directly.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

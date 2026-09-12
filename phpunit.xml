@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="true"
+         failOnRisky="true">
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <!-- Skipped unless LUNA_TEST_DB_NAME is set; see tests/test-config.php. -->
+        <testsuite name="integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <!-- No cookies in a CLI test run: nothing is sending headers there. -->
+        <ini name="session.use_cookies" value="0"/>
+        <ini name="session.use_only_cookies" value="0"/>
+        <ini name="session.cache_limiter" value=""/>
+    </php>
+    <source>
+        <include>
+            <directory suffix=".php">app/src</directory>
+        </include>
+    </source>
+</phpunit>

@@ -1,0 +1,20 @@
+# Local configuration and secrets - never committed
+/app/config.php
+/app/secrets/*
+!/app/secrets/.gitkeep
+
+# Composer. vendor/ is built locally and uploaded, because the LAMP hosting has
+# no shell to run Composer on. composer.lock IS committed: it is what makes the
+# locally built vendor/ reproducible.
+/vendor/
+
+# Tooling
+.phpunit.result.cache
+.phpunit.cache/
+/tests/.tmp/
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

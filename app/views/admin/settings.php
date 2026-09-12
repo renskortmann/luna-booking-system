@@ -1,0 +1,118 @@
+<?php
+/**
+ * @var array<string, string> $settings
+ * @var string|null           $error
+ */
+
+use Luna\Csrf;
+
+$days = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'];
+$openDays = array_map('intval', array_filter(explode(',', $settings['open_days'] ?? '')));
+?>
+<section class="card">
+    <h1>Booking rules</h1>
+
+    <p class="muted small">
+        These apply to lab members. They do not apply to you.
+    </p>
+
+    <?php if ($error !== null): ?>
+        <p class="alert" role="alert"><?= e($error) ?></p>
+    <?php endif; ?>
+
+    <form method="post" action="<?= e(path('/admin/settings')) ?>">
+        <?= Csrf::field() ?>
+
+        <fieldset>
+            <legend>When the machine can be booked</legend>
+
+            <label>Days</label>
+            <div class="checkrow">
+                <?php foreach ($days as $number => $name): ?>
+                    <label class="check">
+                        <input type="checkbox" name="open_days[]" value="<?= e($number) ?>"
+                            <?= in_array($number, $openDays, true) ? 'checked' : '' ?>>
+                        <?= e($name) ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+
+            <label for="open_time">Opens</label>
+            <input id="open_time" name="open_time" type="time" required
+                   value="<?= e($settings['open_time'] ?? '08:00') ?>">
+
+            <label for="close_time">Closes</label>
+            <input id="close_time" name="close_time" type="time" required
+                   value="<?= e($settings['close_time'] ?? '18:00') ?>">
+        </fieldset>
+
+        <fieldset>
+            <legend>Size and shape of a booking</legend>
+
+            <label for="slot_minutes">Slot length (minutes)</label>
+            <input id="slot_minutes" name="slot_minutes" type="number" min="5" max="1440" required
+                   value="<?= e($settings['slot_minutes'] ?? '30') ?>">
+
+            <label for="min_booking_minutes">Shortest booking (minutes)</label>
+            <input id="min_booking_minutes" name="min_booking_minutes" type="number" min="5" max="1440" required
+                   value="<?= e($settings['min_booking_minutes'] ?? '30') ?>">
+
+            <label for="max_booking_minutes">Longest booking (minutes)</label>
+            <input id="max_booking_minutes" name="max_booking_minutes" type="number" min="5" max="1440" required
+                   value="<?= e($settings['max_booking_minutes'] ?? '240') ?>">
+        </fieldset>
+
+        <fieldset>
+            <legend>Limits per person</legend>
+
+            <label for="max_advance_days">Book at most this many days ahead</label>
+            <input id="max_advance_days" name="max_advance_days" type="number" min="1" max="1095" required
+                   value="<?= e($settings['max_advance_days'] ?? '60') ?>">
+
+            <label for="max_active_bookings_per_user">Upcoming bookings per person (0 = no limit)</label>
+            <input id="max_active_bookings_per_user" name="max_active_bookings_per_user"
+                   type="number" min="0" max="100" required
+                   value="<?= e($settings['max_active_bookings_per_user'] ?? '3') ?>">
+
+            <label for="min_change_notice_minutes">Notice needed to change or cancel (minutes)</label>
+            <input id="min_change_notice_minutes" name="min_change_notice_minutes"
+                   type="number" min="0" max="10080" required
+                   value="<?= e($settings['min_change_notice_minutes'] ?? '60') ?>">
+
+            <label class="check">
+                <input type="checkbox" name="allow_booking_in_past" value="1"
+                    <?= ($settings['allow_booking_in_past'] ?? '0') === '1' ? 'checked' : '' ?>>
+                Allow lab members to book times in the past
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Sign-in</legend>
+
+            <label for="auth_mode">How lab members sign in</label>
+            <select id="auth_mode" name="auth_mode">
+                <?php foreach (['local' => 'netID and password (managed here)',
+                                 'both'  => 'Either password or TU Delft SSO (cutover)',
+                                 'saml'  => 'TU Delft SSO only'] as $value => $label): ?>
+                    <option value="<?= e($value) ?>"
+                        <?= ($settings['auth_mode'] ?? 'local') === $value ? 'selected' : '' ?>>
+                        <?= e($label) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+
+            <p class="muted small">
+                TU Delft SSO can only be selected once the service provider has
+                been registered with ICT and configured. Your own sign-in is
+                never affected by this setting.
+            </p>
+
+            <label for="audit_retention_days">Keep audit log entries for (days)</label>
+            <input id="audit_retention_days" name="audit_retention_days" type="number"
+                   min="30" max="3650" required
+                   value="<?= e($settings['audit_retention_days'] ?? '365') ?>">
+        </fieldset>
+
+        <button type="submit" class="primary">Save settings</button>
+    </form>
+</section>

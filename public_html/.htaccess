@@ -1,0 +1,49 @@
+# LUNA OD6 booking system - document root configuration.
+#
+# If the hosting environment ignores .htaccess (AllowOverride None), NOTHING
+# here applies: routing breaks and, in the restricted layout, app/ becomes
+# readable. Verify before go-live by requesting /app/config.php and confirming
+# it is not served - see README.md.
+
+Options -Indexes -MultiViews
+
+# ---------------------------------------------------------------- routing ----
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Never serve the application directories, even when they sit inside the
+    # document root because the root could not be moved.
+    RewriteRule ^(app|vendor|tests|docs|docker)(/|$) - [F,L]
+
+    # Serve real files and directories as-is (assets).
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Everything else is a route.
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# ------------------------------------------------------------ hygiene --------
+# Dotfiles, backups and SQL dumps are never web content.
+<FilesMatch "(^\.|\.(sql|log|md|ini|bak|swp|dist|example)$|~$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+</IfModule>
+
+# Cache the vendored calendar assets; they are versioned by filename.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    <FilesMatch "\.(js|css|woff2?)$">
+        ExpiresDefault "access plus 7 days"
+    </FilesMatch>
+</IfModule>
