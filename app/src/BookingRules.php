@@ -69,24 +69,40 @@ final class BookingRules
 
         // --- opening hours --------------------------------------------------
         $endMinutes = (int) $localEnd->format('H') * 60 + (int) $localEnd->format('i');
-        // A booking that ends exactly at midnight ends on the next calendar day.
-        $endsAtMidnight = $endMinutes === 0;
-        $sameDay = $localStart->format('Y-m-d') === $localEnd->format('Y-m-d')
-            || ($endsAtMidnight && $localStart->modify('+1 day')->format('Y-m-d') === $localEnd->format('Y-m-d'));
+        // A booking that ends exactly at midnight ends on the next calendar day
+        // but occupies none of it.
+        $endsAtMidnight = $endMinutes === 0 && (int) $localEnd->format('s') === 0;
 
-        if (!$sameDay) {
-            $errors[] = 'A booking must start and finish on the same day.';
+        // Every calendar day the booking touches must be one the machine is
+        // open on. Stepping at local noon keeps the cursor clear of the hour
+        // DST adds or removes, so "+1 day" always lands on the next date.
+        $cursor = $localStart->setTime(12, 0);
+        $lastDay = $localEnd->setTime(12, 0);
+
+        if ($endsAtMidnight) {
+            $lastDay = $lastDay->modify('-1 day');
         }
 
-        if (!in_array((int) $localStart->format('N'), $rules->openDays, true)) {
-            $errors[] = 'The machine can be booked on ' . self::humanDays($rules->openDays) . '.';
+        for (; $cursor <= $lastDay; $cursor = $cursor->modify('+1 day')) {
+            if (in_array((int) $cursor->format('N'), $rules->openDays, true)) {
+                continue;
+            }
+
+            $errors[] = 'The machine can be booked on ' . self::humanDays($rules->openDays) . '.'
+                . ($cursor->format('Y-m-d') === $localStart->format('Y-m-d')
+                    ? ''
+                    : ' This booking would run through a ' . self::humanDays([(int) $cursor->format('N')]) . '.');
+            break;
         }
 
+        // Only the two ends are held to the clock. A booking that runs for days
+        // holds the machine through the nights in between, and those hours are
+        // occupied by design rather than booked against opening hours.
         $open = $rules->openMinutes();
         $close = $rules->closeMinutes();
         $effectiveEnd = $endsAtMidnight ? 24 * 60 : $endMinutes;
 
-        if ($sameDay && ($startMinutes < $open || $effectiveEnd > $close)) {
+        if ($startMinutes < $open || $effectiveEnd > $close) {
             $errors[] = 'Bookings must fall between ' . $rules->openTime . ' and ' . $rules->closeTime . '.';
         }
 
@@ -141,6 +157,14 @@ final class BookingRules
     {
         if ($minutes < 60) {
             return $minutes . ' minutes';
+        }
+
+        // Whole days read better than the hour count once a booking runs that
+        // long; anything that is not a round number of days stays in hours.
+        if ($minutes >= 24 * 60 && $minutes % (24 * 60) === 0) {
+            $days = intdiv($minutes, 24 * 60);
+
+            return $days . ($days === 1 ? ' day' : ' days');
         }
 
         $hours = intdiv($minutes, 60);

@@ -63,6 +63,27 @@ final class Clock
     {
         return $moment->setTimezone(self::displayZone())->format($format);
     }
+
+    /**
+     * Every time of day at the given spacing, as "HH:MM".
+     *
+     * The application renders its own time pickers from this: a native time
+     * input follows the browser's locale, which on an English-language machine
+     * means am/pm, and no attribute can talk it out of that.
+     *
+     * @return list<string>
+     */
+    public static function timeOptions(int $stepMinutes = 30): array
+    {
+        $step = max(1, min(24 * 60, $stepMinutes));
+        $times = [];
+
+        for ($minutes = 0; $minutes < 24 * 60; $minutes += $step) {
+            $times[] = sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
+        }
+
+        return $times;
+    }
     /**
      * Parse a time submitted by a browser into a UTC instant.
      *

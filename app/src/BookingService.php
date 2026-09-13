@@ -33,7 +33,7 @@ final class BookingService
         }
 
         if (!$actor->isAdmin) {
-            self::assertRules($actor, $startUtc, $endUtc, null, $userId);
+            self::assertRules($actor, $startUtc, $endUtc, null, $userId, $resourceId);
         } else {
             self::assertSane($startUtc, $endUtc);
         }
@@ -98,7 +98,7 @@ final class BookingService
                 throw BookingException::invalid([$error]);
             }
 
-            self::assertRules($actor, $startUtc, $endUtc, $booking->id, $booking->userId);
+            self::assertRules($actor, $startUtc, $endUtc, $booking->id, $booking->userId, $booking->resourceId);
         } else {
             self::assertSane($startUtc, $endUtc);
         }
@@ -193,9 +193,10 @@ final class BookingService
         DateTimeImmutable $endUtc,
         ?int $excludeBookingId,
         int $ownerUserId,
+        int $resourceId,
     ): void {
         $rules = RuleSet::fromSettings();
-        $activeCount = Bookings::countUpcomingForUser($ownerUserId, $excludeBookingId);
+        $activeCount = Bookings::countUpcomingForUser($ownerUserId, $resourceId, $excludeBookingId);
 
         $errors = BookingRules::validate(
             rules: $rules,

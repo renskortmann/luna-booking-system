@@ -2,11 +2,38 @@
 /**
  * @var list<\Luna\Booking>        $bookings
  * @var list<array<string, mixed>> $users
+ * @var list<array<string, mixed>> $machines
+ * @var string                     $filter
  * @var string|null                $error
  */
 
 use Luna\Clock;
 use Luna\Csrf;
+
+$times = Clock::timeOptions(15);
+
+/** A 24h time dropdown; the native time input would follow the browser's locale. */
+$timeField = static function (string $name, string $label, string $selected) use ($times): string {
+    // A booking made under a different slot length may sit off this grid. Keep
+    // its own time on the list rather than silently moving it to midnight.
+    $choices = in_array($selected, $times, true) ? $times : [...$times, $selected];
+    sort($choices);
+
+    $html = '<select name="' . e($name) . '" aria-label="' . e($label) . '" required>';
+
+    foreach ($choices as $time) {
+        $html .= '<option value="' . e($time) . '"'
+            . ($time === $selected ? ' selected' : '') . '>' . e($time) . '</option>';
+    }
+
+    return $html . '</select>';
+};
+
+/** A date input that keeps a day-first echo of its value beside it. */
+$dateField = static function (string $name, string $label, string $value, string $echoId): string {
+    return '<input type="date" name="' . e($name) . '" aria-label="' . e($label) . '"'
+        . ' value="' . e($value) . '" data-echo="' . e($echoId) . '" required>';
+};
 ?>
 <section class="card">
     <h1>All bookings</h1>
@@ -27,6 +54,15 @@ use Luna\Csrf;
         <?= Csrf::field() ?>
         <input type="hidden" name="action" value="create">
 
+        <label for="machine">Machine</label>
+        <select id="machine" name="machine" required>
+            <?php foreach ($machines as $machine): ?>
+                <?php if ((int) $machine['is_active'] === 1): ?>
+                    <option value="<?= e($machine['slug']) ?>"><?= e($machine['name']) ?></option>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </select>
+
         <label for="owner_netid">netID</label>
         <input id="owner_netid" name="owner_netid" list="netids" required
                autocapitalize="none" spellcheck="false">
@@ -36,11 +72,19 @@ use Luna\Csrf;
             <?php endforeach; ?>
         </datalist>
 
-        <label for="start">Start</label>
-        <input id="start" name="start" type="datetime-local" required>
+        <label for="start_date">Start</label>
+        <span class="when">
+            <input id="start_date" name="start_date" type="date" data-echo="new-start-echo" required>
+            <?= $timeField('start_time', 'Start time', '09:00') ?>
+            <span class="muted small" id="new-start-echo"></span>
+        </span>
 
-        <label for="end">End</label>
-        <input id="end" name="end" type="datetime-local" required>
+        <label for="end_date">End</label>
+        <span class="when">
+            <input id="end_date" name="end_date" type="date" data-echo="new-end-echo" required>
+            <?= $timeField('end_time', 'End time', '17:00') ?>
+            <span class="muted small" id="new-end-echo"></span>
+        </span>
 
         <label for="purpose">Purpose</label>
         <input id="purpose" name="purpose" type="text" maxlength="255">
@@ -52,12 +96,25 @@ use Luna\Csrf;
 <section class="card">
     <h2>Bookings</h2>
 
+    <form method="get" action="<?= e(path('/admin/bookings')) ?>" class="row">
+        <label for="machine_filter">Show</label>
+        <select id="machine_filter" name="machine" data-auto-submit>
+            <option value="">every machine</option>
+            <?php foreach ($machines as $machine): ?>
+                <option value="<?= e($machine['slug']) ?>" <?= $filter === $machine['slug'] ? 'selected' : '' ?>>
+                    <?= e($machine['name']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <button type="submit">Filter</button>
+    </form>
+
     <?php if ($bookings === []): ?>
         <p class="muted">No bookings yet.</p>
     <?php else: ?>
         <table class="wide">
             <thead>
-            <tr><th>When</th><th>Who</th><th>Purpose</th><th>Status</th><th>Change</th></tr>
+            <tr><th>When</th><th>Machine</th><th>Who</th><th>Purpose</th><th>Status</th><th>Change</th></tr>
             </thead>
             <tbody>
             <?php foreach ($bookings as $booking): ?>
@@ -66,6 +123,7 @@ use Luna\Csrf;
                         <?= e(Clock::local($booking->startsAt, 'D j M Y')) ?><br>
                         <?= e(Clock::local($booking->startsAt, 'H:i')) ?>-<?= e(Clock::local($booking->endsAt, 'H:i')) ?>
                     </td>
+                    <td><?= e($booking->resourceName ?? '-') ?></td>
                     <td>
                         <?= e($booking->ownerLabel()) ?><br>
                         <code class="small"><?= e($booking->ownerNetid) ?></code>
@@ -82,10 +140,26 @@ use Luna\Csrf;
                             <?= Csrf::field() ?>
                             <input type="hidden" name="booking_id" value="<?= e($booking->id) ?>">
 
-                            <input type="datetime-local" name="start" aria-label="New start"
-                                   value="<?= e(Clock::local($booking->startsAt, 'Y-m-d\TH:i')) ?>">
-                            <input type="datetime-local" name="end" aria-label="New end"
-                                   value="<?= e(Clock::local($booking->endsAt, 'Y-m-d\TH:i')) ?>">
+                            <span class="when">
+                                <?= $dateField('start_date', 'New start date',
+                                    Clock::local($booking->startsAt, 'Y-m-d'),
+                                    'start-echo-' . $booking->id) ?>
+                                <?= $timeField('start_time', 'New start time',
+                                    Clock::local($booking->startsAt, 'H:i')) ?>
+                                <span class="muted small" id="start-echo-<?= e($booking->id) ?>">
+                                    <?= e(Clock::local($booking->startsAt, 'D j M Y')) ?>
+                                </span>
+                            </span>
+                            <span class="when">
+                                <?= $dateField('end_date', 'New end date',
+                                    Clock::local($booking->endsAt, 'Y-m-d'),
+                                    'end-echo-' . $booking->id) ?>
+                                <?= $timeField('end_time', 'New end time',
+                                    Clock::local($booking->endsAt, 'H:i')) ?>
+                                <span class="muted small" id="end-echo-<?= e($booking->id) ?>">
+                                    <?= e(Clock::local($booking->endsAt, 'D j M Y')) ?>
+                                </span>
+                            </span>
                             <input type="text" name="purpose" aria-label="Purpose" maxlength="255"
                                    value="<?= e($booking->purpose) ?>">
 

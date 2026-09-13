@@ -23,12 +23,13 @@ final class CalendarController
     public function show(Request $request): Response
     {
         $actor = Auth::requireActor();
-        $resource = Resources::primary();
+        $resource = Resources::resolve($request->query('machine'));
         $rules = RuleSet::fromSettings();
 
         return View::page('calendar', [
             'title'    => (string) $resource['name'],
             'resource' => $resource,
+            'machines' => Resources::allActive(),
             'actor'    => $actor,
             'rules'    => $rules,
             'csrf'     => Csrf::token(),
@@ -36,6 +37,7 @@ final class CalendarController
             // Handed to the browser as data attributes; the client mirrors the
             // rules for a civilised UI, but the server is what enforces them.
             'clientRules' => [
+                'resourceId'       => (int) $resource['id'],
                 'slotMinutes'      => $rules->slotMinutes,
                 'openTime'         => $rules->openTime,
                 'closeTime'        => $rules->closeTime,

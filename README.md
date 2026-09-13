@@ -1,11 +1,12 @@
 # LUNA OD6 booking system
 
-A small web application for reserving time on the LUNA OD6 machine, built to
+A small web application for reserving time on the lab's instruments, built to
 run on TU Delft LAMP hosting.
 
-Lab members sign in, see one shared calendar, and book, change or cancel their
-own time slots - and only their own. One administrator controls who may sign in
-at all, and can create, change or delete any booking.
+Lab members sign in, pick a machine, and book, change or cancel their own time
+slots on its shared calendar - and only their own. One administrator controls
+who may sign in at all, manages the list of machines, and can create, change or
+delete any booking.
 
 - **Stage 1 (now):** members sign in with their netID and a password they set
   themselves through a single-use link from the administrator.
@@ -411,11 +412,21 @@ re-register.
   each person's own bookings and the audit log. No email is sent and the
   application makes no outbound connections of any kind.
 
-## Adding a second machine
+## Machines
 
-The schema is already multi-resource. Insert a row in `resources` and change
-`Resources::primary()` to select the one you want, or add a resource picker -
-bookings already reference a resource, and every query is scoped by it.
+The administrator manages the bookable machines at `/admin/machines`. Each
+booking belongs to one machine, and the calendar shows one machine at a time:
+its name is the heading, and a dropdown switches between them. The choice is
+remembered for the next visit, and `/?machine=<slug>` links straight to one.
+
+A machine with bookings on record cannot be deleted, only retired - the same
+reasoning as suspending a user rather than deleting them, so the record of who
+used what stays intact. Retiring one hides it from the picker and stops new
+bookings; the bookings it already has are untouched. The last machine still in
+use cannot be retired.
+
+Booking rules are shared by every machine. The per-person quota counts per
+machine, so filling up one instrument does not lock anybody out of the others.
 
 ---
 

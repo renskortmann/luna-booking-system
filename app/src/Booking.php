@@ -24,6 +24,7 @@ final class Booking
         public readonly bool $createdByAdmin = false,
         public readonly ?string $ownerNetid = null,
         public readonly ?string $ownerName = null,
+        public readonly ?string $resourceName = null,
     ) {
     }
 
@@ -45,6 +46,8 @@ final class Booking
                 ? (string) $row['owner_netid'] : null,
             ownerName: isset($row['owner_name']) && $row['owner_name'] !== null
                 ? (string) $row['owner_name'] : null,
+            resourceName: isset($row['resource_name']) && $row['resource_name'] !== null
+                ? (string) $row['resource_name'] : null,
         );
     }
 

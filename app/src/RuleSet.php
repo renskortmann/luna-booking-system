@@ -36,7 +36,8 @@ final class RuleSet
             openTime: Settings::get('open_time'),
             closeTime: Settings::get('close_time'),
             minMinutes: max(5, Settings::int('min_booking_minutes')),
-            maxMinutes: max(5, Settings::int('max_booking_minutes')),
+            // Set in days by the admin; minutes are the unit the rules use.
+            maxMinutes: max(5, Settings::int('max_booking_days') * 24 * 60),
             maxAdvanceDays: max(1, Settings::int('max_advance_days')),
             maxActivePerUser: max(0, Settings::int('max_active_bookings_per_user')),
             minChangeNoticeMinutes: max(0, Settings::int('min_change_notice_minutes')),

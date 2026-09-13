@@ -13,9 +13,11 @@ final class Bookings
 {
     private const SELECT = 'SELECT b.id, b.resource_id, b.user_id, b.starts_at, b.ends_at,
                                    b.purpose, b.status, b.created_by_admin,
-                                   u.netid AS owner_netid, u.display_name AS owner_name
+                                   u.netid AS owner_netid, u.display_name AS owner_name,
+                                   r.name AS resource_name
                               FROM bookings b
-                              JOIN users u ON u.id = b.user_id';
+                              JOIN users u ON u.id = b.user_id
+                              JOIN resources r ON r.id = b.resource_id';
 
     public static function find(int $id): ?Booking
     {
@@ -60,13 +62,20 @@ final class Bookings
     }
 
     /**
-     * Bookings for the admin management screen, newest first.
+     * Bookings for the admin management screen, newest first. A null resource
+     * id means every machine.
      *
      * @return list<Booking>
      */
-    public static function recent(int $resourceId, int $limit = 200, bool $includeCancelled = false): array
+    public static function recent(?int $resourceId, int $limit = 200, bool $includeCancelled = false): array
     {
-        $sql = self::SELECT . ' WHERE b.resource_id = ?';
+        $sql = self::SELECT . ' WHERE 1 = 1';
+        $params = [];
+
+        if ($resourceId !== null) {
+            $sql .= ' AND b.resource_id = ?';
+            $params[] = $resourceId;
+        }
 
         if (!$includeCancelled) {
             $sql .= ' AND b.status = "confirmed"';
@@ -74,15 +83,22 @@ final class Bookings
 
         $sql .= ' ORDER BY b.starts_at DESC LIMIT ' . max(1, min(1000, $limit));
 
-        return array_map([Booking::class, 'fromRow'], Db::get()->all($sql, [$resourceId]));
+        return array_map([Booking::class, 'fromRow'], Db::get()->all($sql, $params));
     }
 
-    /** How many upcoming confirmed bookings a user holds, for the quota check. */
-    public static function countUpcomingForUser(int $userId, ?int $excludeBookingId = null): int
-    {
+    /**
+     * How many upcoming confirmed bookings a user holds on one machine, for the
+     * quota check. The quota is per machine: filling up one instrument does not
+     * lock somebody out of the others.
+     */
+    public static function countUpcomingForUser(
+        int $userId,
+        int $resourceId,
+        ?int $excludeBookingId = null,
+    ): int {
         $sql = 'SELECT COUNT(*) FROM bookings
-                 WHERE user_id = ? AND status = "confirmed" AND ends_at > ?';
-        $params = [$userId, Clock::sql()];
+                 WHERE user_id = ? AND resource_id = ? AND status = "confirmed" AND ends_at > ?';
+        $params = [$userId, $resourceId, Clock::sql()];
 
         if ($excludeBookingId !== null) {
             $sql .= ' AND id <> ?';

@@ -10,6 +10,8 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         wireConfirmations();
+        wireAutoSubmit();
+        wireDateEchoes();
         wireInviteLink();
         initCalendar();
     });
@@ -28,6 +30,43 @@
             } else {
                 el.addEventListener('click', handler);
             }
+        });
+    }
+
+    /*
+     * Pickers that submit their form as soon as the choice changes. The button
+     * beside them is what works when this script has not run; the policy allows
+     * no inline handler, so the wiring lives here.
+     */
+    function wireAutoSubmit() {
+        document.querySelectorAll('[data-auto-submit]').forEach(function (el) {
+            el.addEventListener('change', function () {
+                if (el.form) {
+                    el.form.submit();
+                }
+            });
+        });
+    }
+
+    /*
+     * A date input displays itself in the browser's locale, which may well put
+     * the month first. Each one names an element to spell its value out in,
+     * day first, so what was picked is never in doubt.
+     */
+    function wireDateEchoes() {
+        document.querySelectorAll('input[type="date"][data-echo]').forEach(function (input) {
+            var echo = document.getElementById(input.dataset.echo);
+
+            if (!echo) {
+                return;
+            }
+
+            var update = function () {
+                echo.textContent = input.value ? longDate(input.value) : '';
+            };
+
+            input.addEventListener('change', update);
+            update();
         });
     }
 
@@ -55,8 +94,8 @@
         var titleEl = document.getElementById('booking-dialog-title');
         var errorEl = document.getElementById('booking-dialog-error');
         var ownerEl = document.getElementById('booking-dialog-owner');
-        var startEl = document.getElementById('booking-start');
-        var endEl = document.getElementById('booking-end');
+        var start = whenField('start');
+        var end = whenField('end');
         var purposeEl = document.getElementById('booking-purpose');
         var ownerNetidEl = document.getElementById('booking-owner');
         var saveBtn = document.getElementById('booking-save');
@@ -65,6 +104,46 @@
 
         /* The booking currently open in the dialog, or null when creating. */
         var editing = null;
+
+        /*
+         * A date input plus a time dropdown the application fills itself, so
+         * the time always reads as 24h whatever the browser's locale is. The
+         * date input keeps its native picker - its value is ISO either way -
+         * and the echo beneath spells the date out day-first, so a widget
+         * showing 09/14/2026 is never ambiguous.
+         */
+        function whenField(name) {
+            var dateEl = document.getElementById('booking-' + name + '-date');
+            var timeEl = document.getElementById('booking-' + name + '-time');
+            var echoEl = document.getElementById('booking-' + name + '-echo');
+
+            fillTimes(timeEl, cfg.slotMinutes);
+
+            var field = {
+                date: dateEl,
+                time: timeEl,
+                /* The combined local value, as the API expects it. */
+                value: function () {
+                    return dateEl.value && timeEl.value ? dateEl.value + 'T' + timeEl.value : '';
+                },
+                set: function (date) {
+                    dateEl.value = isoDate(date);
+                    timeEl.value = nearestOption(timeEl, pad2(date.getHours()) + ':' + pad2(date.getMinutes()));
+                    field.refresh();
+                },
+                refresh: function () {
+                    echoEl.textContent = dateEl.value ? longDate(dateEl.value) : '';
+                },
+                readOnly: function (readOnly) {
+                    dateEl.readOnly = readOnly;
+                    timeEl.disabled = readOnly;
+                }
+            };
+
+            dateEl.addEventListener('change', field.refresh);
+
+            return field;
+        }
 
         var calendar = new FullCalendar.Calendar(el, {
             initialView: 'timeGridWeek',
@@ -99,6 +178,17 @@
             selectConstraint: cfg.isAdmin ? undefined : 'businessHours',
             eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
             slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+            /* Dates are spelled out day first. The bundled library carries no
+               locale data, so its own defaults would read as American; these
+               callbacks decide the wording rather than the viewer's browser. */
+            titleFormat: function (arg) { return rangeLabel(arg.start, arg.end); },
+            dayHeaderFormat: function (arg) {
+                return WEEKDAYS[arg.date.marker.getUTCDay()] + ' ' + arg.date.day + ' ' +
+                    MONTHS[arg.date.month];
+            },
+            listDayFormat: function (arg) {
+                return arg.date.day + ' ' + MONTHS[arg.date.month] + ' ' + arg.date.year;
+            },
             events: loadEvents,
             select: function (info) {
                 openCreate(info.start, info.end);
@@ -116,7 +206,8 @@
         /* ------------------------------------------------------------ data */
 
         function loadEvents(info, success, failure) {
-            var url = feedUrl + '?from=' + encodeURIComponent(info.startStr) +
+            var url = feedUrl + '?resource=' + encodeURIComponent(cfg.resourceId) +
+                '&from=' + encodeURIComponent(info.startStr) +
                 '&to=' + encodeURIComponent(info.endStr);
 
             fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
@@ -157,11 +248,11 @@
 
         /* ---------------------------------------------------------- dialog */
 
-        function openCreate(start, end) {
+        function openCreate(startsAt, endsAt) {
             editing = null;
             titleEl.textContent = 'Book the machine';
-            startEl.value = toLocalInput(start);
-            endEl.value = toLocalInput(end);
+            start.set(startsAt);
+            end.set(endsAt);
             purposeEl.value = '';
             if (ownerNetidEl) { ownerNetidEl.value = ''; }
             ownerEl.hidden = true;
@@ -180,8 +271,8 @@
                 ownerEl.textContent = props.owner + ' has the machine from ' +
                     timeOf(event.start) + ' to ' + timeOf(event.end) + '.';
                 ownerEl.hidden = false;
-                startEl.value = toLocalInput(event.start);
-                endEl.value = toLocalInput(event.end);
+                start.set(event.start);
+                end.set(event.end);
                 purposeEl.value = '';
                 setReadOnly(true);
                 deleteBtn.hidden = true;
@@ -198,8 +289,8 @@
                 ownerEl.textContent = 'Owner: ' + props.owner +
                     (props.ownerNetid ? ' (' + props.ownerNetid + ')' : '');
             }
-            startEl.value = toLocalInput(event.start);
-            endEl.value = toLocalInput(event.end);
+            start.set(event.start);
+            end.set(event.end);
             purposeEl.value = props.purpose || '';
             if (ownerNetidEl) { ownerNetidEl.value = ''; }
             setReadOnly(false);
@@ -228,9 +319,9 @@
         }
 
         function setReadOnly(readOnly) {
-            [startEl, endEl, purposeEl].forEach(function (field) {
-                field.readOnly = readOnly;
-            });
+            start.readOnly(readOnly);
+            end.readOnly(readOnly);
+            purposeEl.readOnly = readOnly;
             if (ownerNetidEl) { ownerNetidEl.disabled = readOnly; }
         }
 
@@ -243,14 +334,15 @@
         dialog.addEventListener('cancel', function () { setReadOnly(false); saveBtn.hidden = false; });
 
         saveBtn.addEventListener('click', function () {
-            if (!startEl.value || !endEl.value) {
+            if (!start.value() || !end.value()) {
                 showError('Please give a start and an end time.');
                 return;
             }
 
             var payload = {
-                start: startEl.value,
-                end: endEl.value,
+                resource: cfg.resourceId,
+                start: start.value(),
+                end: end.value(),
                 purpose: purposeEl.value
             };
 
@@ -330,10 +422,104 @@
         return hidden;
     }
 
-    /* A Date as the value a datetime-local input expects. */
-    function toLocalInput(date) {
-        return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate()) +
-            'T' + pad2(date.getHours()) + ':' + pad2(date.getMinutes());
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    /*
+     * A calendar heading: "14 - 20 Sep 2026", collapsing whatever the two ends
+     * have in common. FullCalendar hands the end as exclusive, so the last day
+     * shown is the one before it.
+     */
+    function rangeLabel(startParts, endParts) {
+        if (!endParts) {
+            return startParts.day + ' ' + MONTHS[startParts.month] + ' ' + startParts.year;
+        }
+
+        var start = startParts.marker;
+        /* The end is exclusive, and markers are UTC, so a day is always 24h. */
+        var last = new Date(endParts.marker.getTime() - 86400000);
+
+        var startDay = start.getUTCDate();
+        var lastDay = last.getUTCDate();
+        var startMonth = MONTHS[start.getUTCMonth()];
+        var lastMonth = MONTHS[last.getUTCMonth()];
+        var startYear = start.getUTCFullYear();
+        var lastYear = last.getUTCFullYear();
+
+        if (startYear !== lastYear) {
+            return startDay + ' ' + startMonth + ' ' + startYear + ' - ' +
+                lastDay + ' ' + lastMonth + ' ' + lastYear;
+        }
+
+        if (startMonth !== lastMonth) {
+            return startDay + ' ' + startMonth + ' - ' + lastDay + ' ' + lastMonth + ' ' + lastYear;
+        }
+
+        if (startDay !== lastDay) {
+            return startDay + ' - ' + lastDay + ' ' + lastMonth + ' ' + lastYear;
+        }
+
+        return startDay + ' ' + lastMonth + ' ' + lastYear;
+    }
+
+    /* A Date as the value a date input expects. */
+    function isoDate(date) {
+        return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
+    }
+
+    /*
+     * An ISO date spelled out day-first. The browser may render the date input
+     * itself in any order it likes; this is what the reader goes by.
+     */
+    function longDate(iso) {
+        var parts = iso.split('-');
+        var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+
+        return WEEKDAYS[date.getDay()] + ' ' + Number(parts[2]) + ' ' +
+            MONTHS[Number(parts[1]) - 1] + ' ' + parts[0];
+    }
+
+    /* Fill a dropdown with every time of day, at the booking slot's spacing. */
+    function fillTimes(select, stepMinutes) {
+        var step = Math.max(1, Math.min(24 * 60, stepMinutes || 30));
+        var options = document.createDocumentFragment();
+
+        for (var m = 0; m < 24 * 60; m += step) {
+            var option = document.createElement('option');
+            option.value = pad2(Math.floor(m / 60)) + ':' + pad2(m % 60);
+            option.textContent = option.value;
+            options.appendChild(option);
+        }
+
+        select.replaceChildren(options);
+    }
+
+    /*
+     * The option closest to a wanted time. A booking made before the admin
+     * changed the slot length may not land on the current grid, and the server
+     * would rather hear a valid time than an empty one.
+     */
+    function nearestOption(select, wanted) {
+        var target = toMinutes(wanted);
+        var best = null;
+        var bestGap = Infinity;
+
+        Array.prototype.forEach.call(select.options, function (option) {
+            var gap = Math.abs(toMinutes(option.value) - target);
+            if (gap < bestGap) {
+                bestGap = gap;
+                best = option.value;
+            }
+        });
+
+        return best === null ? wanted : best;
+    }
+
+    function toMinutes(time) {
+        var parts = time.split(':');
+
+        return Number(parts[0]) * 60 + Number(parts[1]);
     }
 
     function timeOf(date) {

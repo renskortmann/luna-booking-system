@@ -4,11 +4,12 @@
  * it needs is handed over in a data attribute, because the content security
  * policy allows no inline script.
  *
- * @var array<string, mixed>  $resource
- * @var \Luna\Actor           $actor
- * @var \Luna\RuleSet         $rules
- * @var string                $csrf
- * @var array<string, mixed>  $clientRules
+ * @var array<string, mixed>       $resource
+ * @var list<array<string, mixed>> $machines
+ * @var \Luna\Actor                $actor
+ * @var \Luna\RuleSet              $rules
+ * @var string                     $csrf
+ * @var array<string, mixed>       $clientRules
  */
 
 use Luna\BookingRules;
@@ -19,6 +20,21 @@ use Luna\BookingRules;
             <h1><?= e($resource['name']) ?></h1>
             <?php if (!empty($resource['description'])): ?>
                 <p class="muted"><?= e($resource['description']) ?></p>
+            <?php endif; ?>
+
+            <?php if (count($machines) > 1): ?>
+                <form method="get" action="<?= e(path('/')) ?>" class="machine-picker">
+                    <label for="machine">Machine</label>
+                    <select id="machine" name="machine" data-auto-submit>
+                        <?php foreach ($machines as $machine): ?>
+                            <option value="<?= e($machine['slug']) ?>"
+                                <?= $machine['slug'] === $resource['slug'] ? 'selected' : '' ?>>
+                                <?= e($machine['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit">Show</button>
+                </form>
             <?php endif; ?>
         </div>
 
@@ -39,7 +55,7 @@ use Luna\BookingRules;
             up to <?= e(BookingRules::humanDuration($rules->maxMinutes)) ?> at a time,
             <?= e($rules->maxAdvanceDays) ?> days ahead,
             <?= $rules->maxActivePerUser > 0
-                ? 'at most ' . e($rules->maxActivePerUser) . ' upcoming booking(s) each'
+                ? 'at most ' . e($rules->maxActivePerUser) . ' upcoming booking(s) each on this machine'
                 : 'with no limit on how many you may hold' ?>.
         <?php endif; ?>
     </p>
@@ -60,11 +76,19 @@ use Luna\BookingRules;
 
         <p id="booking-dialog-owner" class="muted small" hidden></p>
 
-        <label for="booking-start">Start</label>
-        <input id="booking-start" name="start" type="datetime-local" required>
+        <label for="booking-start-date">Start</label>
+        <div class="when">
+            <input id="booking-start-date" name="start_date" type="date" required>
+            <select id="booking-start-time" name="start_time" aria-label="Start time" required></select>
+        </div>
+        <p class="muted small when-echo" id="booking-start-echo"></p>
 
-        <label for="booking-end">End</label>
-        <input id="booking-end" name="end" type="datetime-local" required>
+        <label for="booking-end-date">End</label>
+        <div class="when">
+            <input id="booking-end-date" name="end_date" type="date" required>
+            <select id="booking-end-time" name="end_time" aria-label="End time" required></select>
+        </div>
+        <p class="muted small when-echo" id="booking-end-echo"></p>
 
         <label for="booking-purpose">Purpose <span class="muted">(optional, only you and the administrator see it)</span></label>
         <input id="booking-purpose" name="purpose" type="text" maxlength="255">

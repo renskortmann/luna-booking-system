@@ -4,10 +4,28 @@
  * @var string|null           $error
  */
 
+use Luna\Clock;
 use Luna\Csrf;
 
 $days = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'];
 $openDays = array_map('intval', array_filter(explode(',', $settings['open_days'] ?? '')));
+
+$times = Clock::timeOptions(15);
+
+/** A 24h time dropdown; the native time input would follow the browser's locale. */
+$timeField = static function (string $name, string $selected) use ($times): string {
+    $choices = in_array($selected, $times, true) ? $times : [...$times, $selected];
+    sort($choices);
+
+    $html = '<select id="' . e($name) . '" name="' . e($name) . '" required>';
+
+    foreach ($choices as $time) {
+        $html .= '<option value="' . e($time) . '"'
+            . ($time === $selected ? ' selected' : '') . '>' . e($time) . '</option>';
+    }
+
+    return $html . '</select>';
+};
 ?>
 <section class="card">
     <h1>Booking rules</h1>
@@ -38,12 +56,10 @@ $openDays = array_map('intval', array_filter(explode(',', $settings['open_days']
             </div>
 
             <label for="open_time">Opens</label>
-            <input id="open_time" name="open_time" type="time" required
-                   value="<?= e($settings['open_time'] ?? '08:00') ?>">
+            <?= $timeField('open_time', $settings['open_time'] ?? '08:00') ?>
 
             <label for="close_time">Closes</label>
-            <input id="close_time" name="close_time" type="time" required
-                   value="<?= e($settings['close_time'] ?? '18:00') ?>">
+            <?= $timeField('close_time', $settings['close_time'] ?? '18:00') ?>
         </fieldset>
 
         <fieldset>
@@ -57,9 +73,14 @@ $openDays = array_map('intval', array_filter(explode(',', $settings['open_days']
             <input id="min_booking_minutes" name="min_booking_minutes" type="number" min="5" max="1440" required
                    value="<?= e($settings['min_booking_minutes'] ?? '30') ?>">
 
-            <label for="max_booking_minutes">Longest booking (minutes)</label>
-            <input id="max_booking_minutes" name="max_booking_minutes" type="number" min="5" max="1440" required
-                   value="<?= e($settings['max_booking_minutes'] ?? '240') ?>">
+            <label for="max_booking_days">Longest booking (days)</label>
+            <input id="max_booking_days" name="max_booking_days" type="number" min="1" max="31" required
+                   value="<?= e($settings['max_booking_days'] ?? '1') ?>">
+            <p class="muted small">
+                A booking may run across several days. Every day it touches must
+                be a day the machine is open, and it must still start after
+                opening time and finish before closing time.
+            </p>
         </fieldset>
 
         <fieldset>

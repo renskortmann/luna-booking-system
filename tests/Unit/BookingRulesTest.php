@@ -155,7 +155,7 @@ final class BookingRulesTest extends TestCase
         self::assertSame([], $errors);
     }
 
-    public function testRejectsABookingSpanningTwoDays(): void
+    public function testAcceptsABookingSpanningTwoDays(): void
     {
         $rules = new RuleSet(openDays: [1, 2, 3, 4, 5, 6, 7], openTime: '00:00',
             closeTime: '23:30', maxMinutes: 24 * 60);
@@ -163,7 +163,103 @@ final class BookingRulesTest extends TestCase
         $errors = $this->validate('2026-09-14 22:00', '2026-09-15 02:00',
             rules: $rules, now: '2026-09-01 12:00');
 
-        self::assertContainsMatch('/start and finish on the same day/', $errors);
+        self::assertSame([], $errors);
+    }
+
+    /**
+     * A long run holds the machine overnight. The hours in between are occupied
+     * by design; only the two ends are held to the opening hours.
+     */
+    public function testAcceptsAnOvernightBooking(): void
+    {
+        $errors = $this->validate('2026-09-14 16:00', '2026-09-15 10:00',
+            rules: $this->multiDayRules(), now: '2026-09-01 12:00');
+
+        self::assertSame([], $errors);
+    }
+
+    /**
+     * The opening-hours check used to apply only to same-day bookings, so
+     * allowing multi-day ones could have opened a hole straight through it.
+     */
+    public function testAMultiDayBookingStillCannotStartBeforeOpeningTime(): void
+    {
+        $errors = $this->validate('2026-09-14 07:00', '2026-09-15 10:00',
+            rules: $this->multiDayRules(), now: '2026-09-01 12:00');
+
+        self::assertContainsMatch('/between 08:00 and 18:00/', $errors);
+    }
+
+    public function testAMultiDayBookingStillCannotEndAfterClosingTime(): void
+    {
+        $errors = $this->validate('2026-09-14 16:00', '2026-09-15 19:00',
+            rules: $this->multiDayRules(), now: '2026-09-01 12:00');
+
+        self::assertContainsMatch('/between 08:00 and 18:00/', $errors);
+    }
+
+    public function testRejectsABookingThatRunsThroughAClosedDay(): void
+    {
+        // Friday 18 September 2026 through to Monday the 21st, over a weekend
+        // the machine is closed.
+        $errors = $this->validate('2026-09-18 16:00', '2026-09-21 10:00',
+            rules: $this->multiDayRules(), now: '2026-09-01 12:00');
+
+        self::assertContainsMatch('/Monday, Tuesday, Wednesday, Thursday and Friday/', $errors);
+        self::assertContainsMatch('/run through a Saturday/', $errors);
+    }
+
+    public function testAClosedDayIsReportedOnlyOnceHoweverLongTheBooking(): void
+    {
+        // Two whole weekends inside one booking, but one sentence about it.
+        $errors = $this->validate('2026-09-14 08:00', '2026-09-28 10:00',
+            rules: $this->multiDayRules(), now: '2026-09-01 12:00');
+
+        $closedDayErrors = array_filter($errors,
+            static fn (string $e): bool => str_contains($e, 'can be booked on'));
+
+        self::assertCount(1, $closedDayErrors, 'one complaint, not one per closed day');
+    }
+
+    /**
+     * A booking ending at exactly midnight finishes on the next calendar day
+     * but occupies none of it, so that day need not be an open one.
+     */
+    public function testABookingMayEndAtMidnightOnTheEveOfAClosedDay(): void
+    {
+        $rules = new RuleSet(openDays: [1, 2, 3, 4, 5], openTime: '08:00',
+            closeTime: '24:00', maxMinutes: 31 * 24 * 60);
+
+        // Friday 16:00 to Saturday 00:00.
+        $errors = $this->validate('2026-09-18 16:00', '2026-09-19 00:00',
+            rules: $rules, now: '2026-09-01 12:00');
+
+        self::assertSame([], $errors);
+    }
+
+    /** The extra hour in October must not make a multi-day booking invalid. */
+    public function testAcceptsAMultiDayBookingAcrossTheOctoberTransition(): void
+    {
+        $rules = new RuleSet(openDays: [1, 2, 3, 4, 5, 6, 7], openTime: '00:00',
+            closeTime: '23:30', maxMinutes: 31 * 24 * 60);
+
+        // Saturday 22:00 to Sunday 12:00: fifteen real hours, not fourteen.
+        $errors = $this->validate('2026-10-24 22:00', '2026-10-25 12:00',
+            rules: $rules, now: '2026-10-01 12:00');
+
+        self::assertSame([], $errors);
+    }
+
+    /** And the missing hour in March. */
+    public function testAcceptsAMultiDayBookingAcrossTheMarchTransition(): void
+    {
+        $rules = new RuleSet(openDays: [1, 2, 3, 4, 5, 6, 7], openTime: '00:00',
+            closeTime: '23:30', maxMinutes: 31 * 24 * 60);
+
+        $errors = $this->validate('2026-03-28 22:00', '2026-03-29 12:00',
+            rules: $rules, now: '2026-03-01 12:00');
+
+        self::assertSame([], $errors);
     }
 
     /**
@@ -252,12 +348,32 @@ final class BookingRulesTest extends TestCase
         self::assertSame('1 hour', BookingRules::humanDuration(60));
         self::assertSame('4 hours', BookingRules::humanDuration(240));
         self::assertSame('2 hours 30 minutes', BookingRules::humanDuration(150));
+        self::assertSame('1 day', BookingRules::humanDuration(24 * 60));
+        self::assertSame('3 days', BookingRules::humanDuration(3 * 24 * 60));
+        // Not a round number of days, so it stays in hours.
+        self::assertSame('25 hours', BookingRules::humanDuration(25 * 60));
         self::assertSame('Monday', BookingRules::humanDays([1]));
         self::assertSame('Monday and Friday', BookingRules::humanDays([1, 5]));
         self::assertSame('Monday, Wednesday and Friday', BookingRules::humanDays([1, 3, 5]));
     }
 
     // ------------------------------------------------------------- helpers
+
+    /** The defaults, but with room for a booking that runs for days. */
+    private function multiDayRules(): RuleSet
+    {
+        return new RuleSet(
+            slotMinutes: 30,
+            openDays: [1, 2, 3, 4, 5],
+            openTime: '08:00',
+            closeTime: '18:00',
+            minMinutes: 30,
+            maxMinutes: 31 * 24 * 60,
+            maxAdvanceDays: 60,
+            maxActivePerUser: 0,
+            timezone: 'Europe/Amsterdam',
+        );
+    }
 
     /**
      * @return list<string>

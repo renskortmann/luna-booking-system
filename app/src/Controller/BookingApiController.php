@@ -30,10 +30,11 @@ use Luna\Users;
  */
 final class BookingApiController
 {
-    /** GET /api/bookings?from=&to= - the calendar feed. */
+    /** GET /api/bookings?resource=&from=&to= - the calendar feed. */
     public function feed(Request $request): Response
     {
         $actor = Auth::requireActor();
+        $resource = Resources::requireActive($request->query('resource'));
 
         $from = Clock::parseInstant($request->query('from', '') ?? '')
             ?? Clock::now()->modify('-1 week');
@@ -49,7 +50,7 @@ final class BookingApiController
             $to = $from->modify('+400 days');
         }
 
-        $bookings = Bookings::inWindow(Resources::primaryId(), $from, $to);
+        $bookings = Bookings::inWindow((int) $resource['id'], $from, $to);
 
         return Response::json(array_map(
             static fn (Booking $b): array => self::toEvent($b, $actor),
@@ -63,12 +64,13 @@ final class BookingApiController
         $actor = Auth::requireActor();
         Csrf::verify($request);
 
+        $resource = Resources::requireActive($request->post('resource'));
         [$start, $end] = $this->readInterval($request);
 
         try {
             $booking = BookingService::create(
                 actor: $actor,
-                resourceId: Resources::primaryId(),
+                resourceId: (int) $resource['id'],
                 startUtc: $start,
                 endUtc: $end,
                 purpose: $request->post('purpose'),

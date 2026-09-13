@@ -24,9 +24,12 @@ final class Settings
         'open_time'                    => '08:00',
         'close_time'                   => '18:00',
         'min_booking_minutes'          => '30',
-        'max_booking_minutes'          => '240',
+        // The longest booking is set in whole days; minutes stay the unit
+        // everything downstream works in. See RuleSet::fromSettings().
+        'max_booking_days'             => '1',
         'max_advance_days'             => '60',
-        'max_active_bookings_per_user' => '3',
+        // 0 means no quota. The limit counts per machine, not in total.
+        'max_active_bookings_per_user' => '0',
         'min_change_notice_minutes'    => '60',
         'allow_booking_in_past'        => '0',
 

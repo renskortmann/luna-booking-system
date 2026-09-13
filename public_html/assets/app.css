@@ -198,6 +198,16 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 
 .rules-summary { margin: 0.5rem 0 1rem; }
 
+/* A date input beside the 24h time dropdown that goes with it. */
+.when { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.when input[type="date"] { width: auto; max-width: 11rem; }
+.when select { width: auto; }
+.when-echo { margin: 0.25rem 0 0; }
+
+.machine-picker { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+.machine-picker label { margin: 0; }
+.machine-picker select { width: auto; min-width: 12rem; }
+
 #calendar { margin-top: 0.5rem; }
 
 /* Own bookings carry the accent colour; everyone else's are neutral, so the

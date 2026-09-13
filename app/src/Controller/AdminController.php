@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Luna\Controller;
 
+use DateTimeImmutable;
 use Luna\Actor;
 use Luna\AdminAuth;
 use Luna\Audit;
@@ -150,17 +151,24 @@ final class AdminController
     {
         Auth::requireAdmin();
 
-        $resource = Resources::primary();
-        $today = Bookings::inWindow(
-            (int) $resource['id'],
-            Clock::now()->setTimezone(Clock::displayZone())->setTime(0, 0)->setTimezone(Clock::utc()),
-            Clock::now()->setTimezone(Clock::displayZone())->setTime(0, 0)->modify('+2 days')->setTimezone(Clock::utc()),
-        );
+        $from = Clock::now()->setTimezone(Clock::displayZone())->setTime(0, 0)->setTimezone(Clock::utc());
+        $to = Clock::now()->setTimezone(Clock::displayZone())
+            ->setTime(0, 0)->modify('+2 days')->setTimezone(Clock::utc());
+
+        $upcoming = [];
+        foreach (Resources::allActive() as $machine) {
+            foreach (Bookings::inWindow((int) $machine['id'], $from, $to) as $booking) {
+                $upcoming[] = $booking;
+            }
+        }
+
+        usort($upcoming, static fn ($a, $b): int => $a->startsAt <=> $b->startsAt);
 
         return View::page('admin/dashboard', [
             'title'         => 'Administration',
-            'resource'      => $resource,
-            'upcoming'      => $today,
+            'machines'      => Resources::allActive(),
+            'machineCount'  => Resources::countActive(),
+            'upcoming'      => $upcoming,
             'userCount'     => (int) Db::get()->value('SELECT COUNT(*) FROM users'),
             'suspended'     => (int) Db::get()->value('SELECT COUNT(*) FROM users WHERE status = "suspended"'),
             'noPassword'    => (int) Db::get()->value('SELECT COUNT(*) FROM users WHERE password_hash IS NULL'),
@@ -288,6 +296,106 @@ final class AdminController
         }
     }
 
+    // ---------------------------------------------------------------- machines
+
+    /**
+     * The bookable machines. A machine with bookings on record is deactivated
+     * rather than deleted, for the same reason a user with bookings is
+     * suspended: the bookings must keep naming what they were for.
+     */
+    public function machines(Request $request): Response
+    {
+        Auth::requireAdmin();
+
+        $error = null;
+
+        if ($request->isPost()) {
+            Csrf::verify($request);
+
+            try {
+                $this->handleMachineAction($request);
+
+                return Response::redirect('/admin/machines');
+            } catch (RuntimeException $e) {
+                $error = $e->getMessage();
+            }
+        }
+
+        return View::page('admin/machines', [
+            'title'    => 'Machines',
+            'machines' => Resources::all(),
+            'error'    => $error,
+        ], $error !== null ? 400 : 200);
+    }
+
+    private function handleMachineAction(Request $request): void
+    {
+        $action = $request->post('action', '') ?? '';
+
+        if ($action === 'add') {
+            $machine = Resources::create(
+                $request->post('name', '') ?? '',
+                $request->post('description'),
+            );
+            Audit::log('machine_added', 'resource', (int) $machine['id'],
+                ['name' => $machine['name'], 'slug' => $machine['slug']]);
+            Session::flash('success', $machine['name'] . ' can now be booked.');
+
+            return;
+        }
+
+        $machineId = (int) ($request->post('machine_id', '0') ?? '0');
+        $machine = $machineId > 0 ? Resources::find($machineId) : null;
+
+        if ($machine === null) {
+            throw new RuntimeException('That machine no longer exists.');
+        }
+
+        $name = (string) $machine['name'];
+
+        switch ($action) {
+            case 'update':
+                Resources::update($machineId, $request->post('name', '') ?? '', $request->post('description'));
+                Audit::log('machine_updated', 'resource', $machineId, ['name' => $name]);
+                Session::flash('success', 'Saved.');
+                break;
+
+            case 'deactivate':
+                if (Resources::countActive() <= 1) {
+                    throw new RuntimeException(
+                        'This is the only machine still in use. Add another one before retiring ' . $name . '.'
+                    );
+                }
+
+                Resources::setActive($machineId, false);
+                Audit::log('machine_deactivated', 'resource', $machineId, ['name' => $name]);
+                Session::flash('success', $name . ' can no longer be booked. Its bookings are untouched.');
+                break;
+
+            case 'reactivate':
+                Resources::setActive($machineId, true);
+                Audit::log('machine_reactivated', 'resource', $machineId, ['name' => $name]);
+                Session::flash('success', $name . ' can be booked again.');
+                break;
+
+            case 'delete':
+                if (Resources::countBookings($machineId) > 0) {
+                    throw new RuntimeException(
+                        $name . ' has bookings on record. Retire it instead of deleting it, '
+                        . 'or delete those bookings first.'
+                    );
+                }
+
+                Resources::delete($machineId);
+                Audit::log('machine_deleted', 'resource', null, ['name' => $name]);
+                Session::flash('success', $name . ' has been removed.');
+                break;
+
+            default:
+                throw new RuntimeException('Unknown action.');
+        }
+    }
+
     // ---------------------------------------------------------------- bookings
 
     public function bookings(Request $request): Response
@@ -310,10 +418,16 @@ final class AdminController
             }
         }
 
+        // An empty filter means every machine.
+        $filter = $request->query('machine', '') ?? '';
+        $filtered = $filter === '' ? null : Resources::findBySlug($filter);
+
         return View::page('admin/bookings', [
             'title'    => 'All bookings',
-            'bookings' => Bookings::recent(Resources::primaryId(), 300, true),
+            'bookings' => Bookings::recent($filtered === null ? null : (int) $filtered['id'], 300, true),
             'users'    => Users::listAll(),
+            'machines' => Resources::all(),
+            'filter'   => $filtered === null ? '' : (string) $filtered['slug'],
             'error'    => $error,
         ], $error !== null ? 400 : 200);
     }
@@ -324,8 +438,8 @@ final class AdminController
         $action = $request->post('action', '') ?? '';
 
         if ($action === 'create') {
-            $start = Clock::parseInstant($request->post('start', '') ?? '');
-            $end = Clock::parseInstant($request->post('end', '') ?? '');
+            $start = self::readMoment($request, 'start');
+            $end = self::readMoment($request, 'end');
 
             if ($start === null || $end === null) {
                 throw new RuntimeException('Please give a start and an end time.');
@@ -338,7 +452,9 @@ final class AdminController
                 throw new RuntimeException('No user with netID "' . $netid . '" is on the allowlist.');
             }
 
-            BookingService::create($actor, Resources::primaryId(), $start, $end,
+            $machine = Resources::requireActive($request->post('machine'));
+
+            BookingService::create($actor, (int) $machine['id'], $start, $end,
                 $request->post('purpose'), $owner->id);
             Session::flash('success', 'Booking created for ' . $owner->netid . '.');
 
@@ -353,8 +469,8 @@ final class AdminController
 
         switch ($action) {
             case 'update':
-                $start = Clock::parseInstant($request->post('start', '') ?? '');
-                $end = Clock::parseInstant($request->post('end', '') ?? '');
+                $start = self::readMoment($request, 'start');
+                $end = self::readMoment($request, 'end');
 
                 if ($start === null || $end === null) {
                     throw new RuntimeException('Please give a start and an end time.');
@@ -377,6 +493,23 @@ final class AdminController
             default:
                 throw new RuntimeException('Unknown action.');
         }
+    }
+
+    /**
+     * A moment from the split date and time fields the forms post. The time
+     * comes from a dropdown the application renders, rather than a native time
+     * input, so that it always reads as 24h whatever the browser's locale is.
+     */
+    private static function readMoment(Request $request, string $name): ?DateTimeImmutable
+    {
+        $date = $request->post($name . '_date', '') ?? '';
+        $time = $request->post($name . '_time', '') ?? '';
+
+        if ($date === '' || $time === '') {
+            return null;
+        }
+
+        return Clock::parseInstant($date . ' ' . $time);
     }
 
     // ---------------------------------------------------------------- settings
@@ -412,7 +545,8 @@ final class AdminController
         $integers = [
             'slot_minutes'                 => [5, 24 * 60],
             'min_booking_minutes'          => [5, 24 * 60],
-            'max_booking_minutes'          => [5, 24 * 60],
+            // 31 days is the hard ceiling BookingService::assertSane() enforces.
+            'max_booking_days'             => [1, 31],
             'max_advance_days'             => [1, 1095],
             'max_active_bookings_per_user' => [0, 100],
             'min_change_notice_minutes'    => [0, 7 * 24 * 60],
@@ -437,7 +571,7 @@ final class AdminController
             $values[$key] = (string) $value;
         }
 
-        if ((int) $values['min_booking_minutes'] > (int) $values['max_booking_minutes']) {
+        if ((int) $values['min_booking_minutes'] > (int) $values['max_booking_days'] * 24 * 60) {
             throw new RuntimeException('The shortest booking cannot be longer than the longest booking.');
         }
 
