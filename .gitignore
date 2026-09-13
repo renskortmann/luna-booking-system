@@ -2,6 +2,7 @@
 /app/config.php
 /app/secrets/*
 !/app/secrets/.gitkeep
+recovery_codes.txt
 
 # Composer. vendor/ is built locally and uploaded, because the LAMP hosting has
 # no shell to run Composer on. composer.lock IS committed: it is what makes the
