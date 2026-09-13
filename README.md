@@ -79,6 +79,40 @@ before you close that terminal; there is no second copy anywhere. Then sign in
 at `http://localhost:8000/admin/login`, not `/login` - see
 [the two sign-in pages](#two-separate-sign-in-pages) above.
 
+It also reads fine from a pipe, if you want to script the setup instead of
+typing at the prompts (username, password, password again):
+
+```bash
+printf 'admin\nyour-password\nyour-password\n' | php app/cli/create-admin.php
+```
+
+### If `mysql -e '...'` refuses your connection
+
+The one-liner above assumes passwordless `root` access, which on a stock
+MariaDB install only works as the `root` *OS* user (it authenticates via
+`unix_socket`, matching your Linux username to the MySQL username - so your
+own login, and a plain `root`/empty-password guess over TCP, both get
+"Access denied" even though the server is running fine). Two ways past it:
+
+- Run the database setup itself as root: `sudo mysql -e 'CREATE DATABASE ...'`.
+- Or create a dedicated account for the app instead of fighting `root`:
+
+  ```bash
+  sudo mysql -e "
+  CREATE DATABASE IF NOT EXISTS luna_booking CHARACTER SET utf8mb4;
+  CREATE USER IF NOT EXISTS 'luna_dev'@'localhost' IDENTIFIED BY 'pick-a-password';
+  GRANT ALL PRIVILEGES ON luna_booking.* TO 'luna_dev'@'localhost';
+  FLUSH PRIVILEGES;
+  "
+  ```
+
+  Then put `luna_dev` / that password in `app/config.php`'s `db` block, and
+  make sure `db.socket` is `null` there - a value left over from a different
+  local MySQL instance (e.g. a scratch one from a previous test run) makes the
+  app try to connect through a socket that no longer exists instead of over
+  TCP, which fails the same way and is easy to mistake for a credentials
+  problem.
+
 ### Tests
 
 ```bash
