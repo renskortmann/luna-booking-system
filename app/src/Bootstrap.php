@@ -106,10 +106,14 @@ final class Bootstrap
         // Every asset is served from this origin - nothing is loaded from a CDN -
         // so the policy can stay at 'self'. 'unsafe-inline' is needed for
         // style-src only because FullCalendar positions events with inline
-        // style attributes; no inline <script> is used anywhere.
+        // style attributes; no inline <script> is used anywhere. font-src needs
+        // data: too: FullCalendar's icon font ships as a data: URI, and without
+        // an explicit allowance it falls back to default-src and gets blocked,
+        // which sends FullCalendar's layout code into a busy retry loop.
         header("Content-Security-Policy: default-src 'self'; base-uri 'none'; "
             . "object-src 'none'; frame-ancestors 'none'; form-action 'self'; "
-            . "img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'");
+            . "img-src 'self' data:; font-src 'self' data:; "
+            . "style-src 'self' 'unsafe-inline'; script-src 'self'");
         header('X-Content-Type-Options: nosniff');
         header('X-Frame-Options: DENY');
         header('Referrer-Policy: strict-origin-when-cross-origin');

@@ -76,7 +76,6 @@
             nowIndicator: true,
             allDaySlot: false,
             height: 'auto',
-            expandRows: true,
             slotDuration: minutes(cfg.slotMinutes),
             snapDuration: minutes(cfg.slotMinutes),
             slotMinTime: pad(cfg.openTime) + ':00',
