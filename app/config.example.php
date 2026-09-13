@@ -134,6 +134,9 @@ return [
                 // ICT confirms these two; both default to the safer setting.
                 'authnRequestsSigned'  => true,
                 'wantMessagesSigned'   => false,
+                // Unset defaults to false in php-saml, which is what enables
+                // signature-wrapping attacks. Always require a signed assertion.
+                'wantAssertionsSigned' => true,
             ],
             'dev' => [
                 'entityId'            => 'http://localhost:8081/simplesaml/saml2/idp/metadata.php',
@@ -142,6 +145,7 @@ return [
                 'x509cert'            => '',
                 'authnRequestsSigned' => false,
                 'wantMessagesSigned'  => false,
+                'wantAssertionsSigned' => true,
             ],
         ],
     ],

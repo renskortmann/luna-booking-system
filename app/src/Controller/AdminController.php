@@ -656,12 +656,21 @@ final class AdminController
             ], 503);
         }
 
+        RateLimit::assertAllowed('install');
+
         $provided = (string) ($request->post('install_token') ?? $request->query('token') ?? '');
 
         if (!hash_equals($token, $provided)) {
+            RateLimit::record('install', false);
+            Audit::log('install_token_rejected', 'system', null, [],
+                actorType: 'anonymous', actorLabel: 'anonymous');
+
             // Wrong or missing token: reveal nothing at all.
             throw HttpException::notFound();
         }
+
+        RateLimit::record('install', true);
+        RateLimit::clear('install');
 
         $migrator = new Migrator(Db::get());
 
