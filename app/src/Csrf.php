@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
-use Luna\Http\HttpException;
-use Luna\Http\Request;
+use Macrolab\Http\HttpException;
+use Macrolab\Http\Request;
 
 /**
  * One token per session, required on every state-changing request - HTML forms

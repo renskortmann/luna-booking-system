@@ -1,14 +1,14 @@
 <?php
 /**
- * @var \Luna\User            $user
- * @var list<\Luna\Booking>   $bookings
+ * @var \Macrolab\User            $user
+ * @var list<\Macrolab\Booking>   $bookings
  * @var bool                  $canChange
  * @var int                   $minimum
  * @var string|null           $error
  */
 
-use Luna\Clock;
-use Luna\Csrf;
+use Macrolab\Clock;
+use Macrolab\Csrf;
 ?>
 <section class="card">
     <h1>My account</h1>

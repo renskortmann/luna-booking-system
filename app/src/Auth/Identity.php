@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna\Auth;
+namespace Macrolab\Auth;
 
 /**
  * A verified identity, as an authentication provider reports it. Carries no

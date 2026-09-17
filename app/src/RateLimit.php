@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 /**
  * Login throttling, shared by the user and admin login paths.

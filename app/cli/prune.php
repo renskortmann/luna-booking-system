@@ -12,11 +12,11 @@ declare(strict_types=1);
  * assertion ids.
  */
 
-use Luna\Audit;
-use Luna\Clock;
-use Luna\Config;
-use Luna\Db;
-use Luna\Settings;
+use Macrolab\Audit;
+use Macrolab\Clock;
+use Macrolab\Config;
+use Macrolab\Db;
+use Macrolab\Settings;
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);

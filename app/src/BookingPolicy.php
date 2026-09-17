@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
-use Luna\Http\HttpException;
+use Macrolab\Http\HttpException;
 
 /**
  * Who may change what. The whole of the "users can edit their own bookings but

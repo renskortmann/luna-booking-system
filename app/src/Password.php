@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 /**
  * Password hashing and the password policy, in one place so that the user

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 use OTPHP\TOTP;
 use RuntimeException;
@@ -290,7 +290,7 @@ final class AdminAuth
     {
         $totp = self::totp($secret);
         $totp->setLabel($username);
-        $totp->setIssuer(Config::string('app.name', 'LUNA OD6 Booking'));
+        $totp->setIssuer(Config::string('app.name', 'Macrolab website'));
 
         return $totp->getProvisioningUri();
     }

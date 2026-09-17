@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 use ErrorException;
-use Luna\Http\HttpException;
-use Luna\Http\Request;
-use Luna\Http\Response;
+use Macrolab\Http\HttpException;
+use Macrolab\Http\Request;
+use Macrolab\Http\Response;
 use Throwable;
 
 /**
@@ -51,7 +51,7 @@ final class Bootstrap
         } catch (HttpException $e) {
             $response = self::renderHttpError($e, $request);
         } catch (Throwable $e) {
-            error_log('[luna] unhandled: ' . $e::class . ': ' . $e->getMessage()
+            error_log('[macrolab] unhandled: ' . $e::class . ': ' . $e->getMessage()
                 . ' @ ' . $e->getFile() . ':' . $e->getLine());
 
             $response = self::renderServerError($e, $request);
@@ -159,7 +159,7 @@ final class Bootstrap
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
-        session_name('luna_session');
+        session_name('macrolab_session');
 
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');

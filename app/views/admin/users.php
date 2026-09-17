@@ -6,8 +6,8 @@
  * @var string                     $authMode
  */
 
-use Luna\Clock;
-use Luna\Csrf;
+use Macrolab\Clock;
+use Macrolab\Csrf;
 ?>
 <section class="card">
     <h1>Who may sign in</h1>

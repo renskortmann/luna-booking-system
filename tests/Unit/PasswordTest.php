@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Unit;
+namespace Macrolab\Tests\Unit;
 
-use Luna\Config;
-use Luna\Password;
+use Macrolab\Config;
+use Macrolab\Password;
 use PHPUnit\Framework\TestCase;
 
 final class PasswordTest extends TestCase

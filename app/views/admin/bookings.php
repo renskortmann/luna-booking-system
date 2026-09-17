@@ -1,14 +1,14 @@
 <?php
 /**
- * @var list<\Luna\Booking>        $bookings
+ * @var list<\Macrolab\Booking>        $bookings
  * @var list<array<string, mixed>> $users
  * @var list<array<string, mixed>> $machines
  * @var string                     $filter
  * @var string|null                $error
  */
 
-use Luna\Clock;
-use Luna\Csrf;
+use Macrolab\Clock;
+use Macrolab\Csrf;
 
 $times = Clock::timeOptions(15);
 

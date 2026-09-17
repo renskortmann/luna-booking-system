@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Luna\Controller;
+namespace Macrolab\Controller;
 
-use Luna\Auth;
-use Luna\Bookings;
-use Luna\Clock;
-use Luna\Csrf;
-use Luna\Http\Request;
-use Luna\Http\Response;
-use Luna\Resources;
-use Luna\RuleSet;
-use Luna\Session;
-use Luna\View;
+use Macrolab\Auth;
+use Macrolab\Bookings;
+use Macrolab\Clock;
+use Macrolab\Csrf;
+use Macrolab\Http\Request;
+use Macrolab\Http\Response;
+use Macrolab\Resources;
+use Macrolab\RuleSet;
+use Macrolab\Session;
+use Macrolab\View;
 
 /**
  * The calendar - the page the system exists for.

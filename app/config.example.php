@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * LUNA OD6 Booking System - local configuration.
+ * Macrolab website - local configuration.
  *
  * Copy this file to app/config.php and fill it in. config.php is gitignored and
  * must never be committed or served: see the deployment notes in README.md.
@@ -14,11 +14,11 @@ declare(strict_types=1);
  */
 return [
     'app' => [
-        'name' => 'LUNA OD6 Booking',
+        'name' => 'Macrolab website',
 
         // Public base URL, no trailing slash. Baked into invite links and (in
         // stage 2) the SAML entityId and ACS URL, so fix this before go-live.
-        'base_url' => 'https://example.tudelft.nl/luna',
+        'base_url' => 'https://example.tudelft.nl/macrolab',
 
         // 32 random bytes, base64-encoded. Generate with:
         //   php app/cli/generate-key.php
@@ -53,7 +53,7 @@ return [
     'db' => [
         'host'    => 'localhost',
         'port'    => 3306,
-        'name'    => 'luna_booking',
+        'name'    => 'macrolab',
         'user'    => '',
         'pass'    => '',
         'charset' => 'utf8mb4',

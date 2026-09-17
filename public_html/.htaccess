@@ -1,4 +1,4 @@
-# LUNA OD6 booking system - document root configuration.
+# Macrolab website - document root configuration.
 #
 # If the hosting environment ignores .htaccess (AllowOverride None), NOTHING
 # here applies: routing breaks and, in the restricted layout, app/ becomes

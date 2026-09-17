@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Unit;
+namespace Macrolab\Tests\Unit;
 
-use Luna\Clock;
-use Luna\Config;
+use Macrolab\Clock;
+use Macrolab\Config;
 use PHPUnit\Framework\TestCase;
 
 final class ClockTest extends TestCase

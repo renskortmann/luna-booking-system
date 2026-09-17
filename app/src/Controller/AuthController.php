@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Luna\Controller;
+namespace Macrolab\Controller;
 
-use Luna\Audit;
-use Luna\Auth;
-use Luna\Auth\AccessDeniedException;
-use Luna\Auth\LocalProvider;
-use Luna\Csrf;
-use Luna\Db;
-use Luna\Http\HttpException;
-use Luna\Http\Request;
-use Luna\Http\Response;
-use Luna\Invite;
-use Luna\Password;
-use Luna\Session;
-use Luna\Settings;
-use Luna\Users;
-use Luna\View;
+use Macrolab\Audit;
+use Macrolab\Auth;
+use Macrolab\Auth\AccessDeniedException;
+use Macrolab\Auth\LocalProvider;
+use Macrolab\Csrf;
+use Macrolab\Db;
+use Macrolab\Http\HttpException;
+use Macrolab\Http\Request;
+use Macrolab\Http\Response;
+use Macrolab\Invite;
+use Macrolab\Password;
+use Macrolab\Session;
+use Macrolab\Settings;
+use Macrolab\Users;
+use Macrolab\View;
 
 /**
  * Signing in and out, and the invite links that let a new user set a password.
@@ -155,7 +155,7 @@ final class AuthController
             'purpose'  => (string) $invite['purpose'],
             'token'    => $token,
             'error'    => $error,
-            'minimum'  => \Luna\Config::int('auth.password_min_length', 12),
+            'minimum'  => \Macrolab\Config::int('auth.password_min_length', 12),
         ], $error !== null ? 400 : 200);
     }
 

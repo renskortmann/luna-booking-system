@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 /**
  * Whoever is making the current request: a lab member, or the administrator.

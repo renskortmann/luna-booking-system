@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Unit;
+namespace Macrolab\Tests\Unit;
 
-use Luna\Config;
-use Luna\Crypto;
+use Macrolab\Config;
+use Macrolab\Crypto;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

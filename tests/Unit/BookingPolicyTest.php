@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Unit;
+namespace Macrolab\Tests\Unit;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Luna\Actor;
-use Luna\Booking;
-use Luna\BookingPolicy;
-use Luna\User;
+use Macrolab\Actor;
+use Macrolab\Booking;
+use Macrolab\BookingPolicy;
+use Macrolab\User;
 use PHPUnit\Framework\TestCase;
 
 /**

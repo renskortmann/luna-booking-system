@@ -6,10 +6,10 @@
  * @var string $title
  */
 
-use Luna\Auth;
-use Luna\Config;
-use Luna\Csrf;
-use Luna\Session;
+use Macrolab\Auth;
+use Macrolab\Config;
+use Macrolab\Csrf;
+use Macrolab\Session;
 
 $user = Auth::user();
 $isAdmin = Auth::isAdmin();
@@ -21,12 +21,12 @@ $flashes = Session::takeFlashes();
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title><?= e($title ?? 'Booking') ?> &middot; <?= e(Config::string('app.name', 'LUNA OD6 Booking')) ?></title>
+    <title><?= e($title ?? 'Booking') ?> &middot; <?= e(Config::string('app.name', 'Macrolab website')) ?></title>
     <link rel="stylesheet" href="<?= e(path('/assets/app.css')) ?>">
 </head>
 <body>
 <header class="topbar">
-    <a class="brand" href="<?= e(path('/')) ?>"><?= e(Config::string('app.name', 'LUNA OD6 Booking')) ?></a>
+    <a class="brand" href="<?= e(path('/')) ?>"><?= e(Config::string('app.name', 'Macrolab website')) ?></a>
 
     <nav>
         <?php if ($isAdmin): ?>
@@ -59,7 +59,7 @@ $flashes = Session::takeFlashes();
 
 <footer>
     <p>
-        LUNA OD6 booking system.
+        Macrolab website.
         Times are shown in <?= e(Config::string('app.display_timezone', 'Europe/Amsterdam')) ?>.
     </p>
 </footer>

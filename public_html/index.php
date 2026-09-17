@@ -26,9 +26,9 @@ if (!is_file($autoload)) {
 
 require $autoload;
 
-\Luna\Bootstrap::init($appDir . '/config.php');
+\Macrolab\Bootstrap::init($appDir . '/config.php');
 
-/** @var \Luna\Router $router */
+/** @var \Macrolab\Router $router */
 $router = require $appDir . '/routes.php';
 
-\Luna\Bootstrap::run($router, \Luna\Http\Request::fromGlobals());
+\Macrolab\Bootstrap::run($router, \Macrolab\Http\Request::fromGlobals());

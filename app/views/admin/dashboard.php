@@ -2,7 +2,7 @@
 /**
  * @var list<array<string, mixed>> $machines
  * @var int                  $machineCount
- * @var list<\Luna\Booking>  $upcoming
+ * @var list<\Macrolab\Booking>  $upcoming
  * @var int                  $userCount
  * @var int                  $suspended
  * @var int                  $noPassword
@@ -11,7 +11,7 @@
  * @var string               $passwordAlgo
  */
 
-use Luna\Clock;
+use Macrolab\Clock;
 ?>
 <section class="card">
     <h1>Administration</h1>

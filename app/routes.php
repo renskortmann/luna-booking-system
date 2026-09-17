@@ -7,12 +7,12 @@ declare(strict_types=1);
  * of what the application does.
  */
 
-use Luna\Controller\AccountController;
-use Luna\Controller\AdminController;
-use Luna\Controller\AuthController;
-use Luna\Controller\BookingApiController;
-use Luna\Controller\CalendarController;
-use Luna\Router;
+use Macrolab\Controller\AccountController;
+use Macrolab\Controller\AdminController;
+use Macrolab\Controller\AuthController;
+use Macrolab\Controller\BookingApiController;
+use Macrolab\Controller\CalendarController;
+use Macrolab\Router;
 
 $router = new Router();
 

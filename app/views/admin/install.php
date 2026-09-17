@@ -8,7 +8,7 @@
  * @var string                                                            $token
  */
 
-use Luna\Csrf;
+use Macrolab\Csrf;
 ?>
 <section class="card">
     <h1>Install the booking system</h1>

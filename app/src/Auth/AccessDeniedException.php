@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna\Auth;
+namespace Macrolab\Auth;
 
 use RuntimeException;
 
@@ -26,14 +26,14 @@ final class AccessDeniedException extends RuntimeException
     public static function notAllowlisted(string $netid): self
     {
         return new self('not_allowlisted', $netid,
-            'Your netID is not authorised for the LUNA OD6 booking system. '
+            'Your netID is not authorised for the Macrolab website. '
             . 'Please ask the lab administrator to give you access.');
     }
 
     public static function suspended(string $netid): self
     {
         return new self('suspended', $netid,
-            'Your access to the LUNA OD6 booking system has been suspended. '
+            'Your access to the Macrolab website has been suspended. '
             . 'Please contact the lab administrator.');
     }
 }

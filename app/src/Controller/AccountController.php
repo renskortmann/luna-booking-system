@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Luna\Controller;
+namespace Macrolab\Controller;
 
-use Luna\Audit;
-use Luna\Auth;
-use Luna\Bookings;
-use Luna\Config;
-use Luna\Csrf;
-use Luna\Http\Request;
-use Luna\Http\Response;
-use Luna\Password;
-use Luna\Session;
-use Luna\Settings;
-use Luna\Users;
-use Luna\View;
+use Macrolab\Audit;
+use Macrolab\Auth;
+use Macrolab\Bookings;
+use Macrolab\Config;
+use Macrolab\Csrf;
+use Macrolab\Http\Request;
+use Macrolab\Http\Response;
+use Macrolab\Password;
+use Macrolab\Session;
+use Macrolab\Settings;
+use Macrolab\Users;
+use Macrolab\View;
 
 /**
  * The signed-in user's own account: their upcoming bookings and, while local

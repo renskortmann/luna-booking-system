@@ -6,7 +6,7 @@
  * @var bool        $ssoOpen
  */
 
-use Luna\Csrf;
+use Macrolab\Csrf;
 ?>
 <section class="card narrow">
     <h1>Sign in</h1>

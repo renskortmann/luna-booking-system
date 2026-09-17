@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 use RuntimeException;
 use Throwable;

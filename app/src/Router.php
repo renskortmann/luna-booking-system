@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
-use Luna\Http\HttpException;
-use Luna\Http\Request;
-use Luna\Http\Response;
+use Macrolab\Http\HttpException;
+use Macrolab\Http\Request;
+use Macrolab\Http\Response;
 
 /**
  * A route table small enough to read in one screen. Patterns use {name}

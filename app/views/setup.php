@@ -7,7 +7,7 @@
  * @var int         $minimum
  */
 
-use Luna\Csrf;
+use Macrolab\Csrf;
 ?>
 <section class="card narrow">
     <h1><?= $purpose === 'reset' ? 'Choose a new password' : 'Choose a password' ?></h1>

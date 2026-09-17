@@ -2,34 +2,34 @@
 
 declare(strict_types=1);
 
-namespace Luna\Controller;
+namespace Macrolab\Controller;
 
 use DateTimeImmutable;
-use Luna\Actor;
-use Luna\AdminAuth;
-use Luna\Audit;
-use Luna\Auth;
-use Luna\BookingException;
-use Luna\BookingService;
-use Luna\Bookings;
-use Luna\Clock;
-use Luna\Config;
-use Luna\Csrf;
-use Luna\Db;
-use Luna\Environment;
-use Luna\Http\HttpException;
-use Luna\Http\Request;
-use Luna\Http\Response;
-use Luna\Invite;
-use Luna\Migrator;
-use Luna\Password;
-use Luna\Qr;
-use Luna\RateLimit;
-use Luna\Resources;
-use Luna\Session;
-use Luna\Settings;
-use Luna\Users;
-use Luna\View;
+use Macrolab\Actor;
+use Macrolab\AdminAuth;
+use Macrolab\Audit;
+use Macrolab\Auth;
+use Macrolab\BookingException;
+use Macrolab\BookingService;
+use Macrolab\Bookings;
+use Macrolab\Clock;
+use Macrolab\Config;
+use Macrolab\Csrf;
+use Macrolab\Db;
+use Macrolab\Environment;
+use Macrolab\Http\HttpException;
+use Macrolab\Http\Request;
+use Macrolab\Http\Response;
+use Macrolab\Invite;
+use Macrolab\Migrator;
+use Macrolab\Password;
+use Macrolab\Qr;
+use Macrolab\RateLimit;
+use Macrolab\Resources;
+use Macrolab\Session;
+use Macrolab\Settings;
+use Macrolab\Users;
+use Macrolab\View;
 use RuntimeException;
 
 /**

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Integration;
+namespace Macrolab\Tests\Integration;
 
-use Luna\Auth;
-use Luna\Clock;
-use Luna\Config;
-use Luna\Db;
-use Luna\Settings;
+use Macrolab\Auth;
+use Macrolab\Clock;
+use Macrolab\Config;
+use Macrolab\Db;
+use Macrolab\Settings;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -19,9 +19,9 @@ use PHPUnit\Framework\TestCase;
  *
  * Point it at a scratch database and it rebuilds the schema before each test:
  *
- *   export LUNA_TEST_DB_NAME=luna_test
- *   export LUNA_TEST_DB_USER=root
- *   export LUNA_TEST_DB_PASS=
+ *   export MACROLAB_TEST_DB_NAME=macrolab_test
+ *   export MACROLAB_TEST_DB_USER=root
+ *   export MACROLAB_TEST_DB_PASS=
  *   vendor/bin/phpunit
  *
  * Without those variables the whole suite is skipped rather than failing, so
@@ -31,11 +31,11 @@ abstract class DatabaseTestCase extends TestCase
 {
     protected function setUp(): void
     {
-        $name = getenv('LUNA_TEST_DB_NAME');
+        $name = getenv('MACROLAB_TEST_DB_NAME');
 
         if ($name === false || $name === '') {
             self::markTestSkipped(
-                'Set LUNA_TEST_DB_NAME (and LUNA_TEST_DB_USER / _PASS / _HOST) to run the database tests.'
+                'Set MACROLAB_TEST_DB_NAME (and MACROLAB_TEST_DB_USER / _PASS / _HOST) to run the database tests.'
             );
         }
 

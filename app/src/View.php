@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
-use Luna\Http\Response;
+use Macrolab\Http\Response;
 use RuntimeException;
 
 /**
@@ -26,9 +26,9 @@ final class View
      */
     public static function render(string $template, array $data = []): string
     {
-        $__lunaFile = self::directory() . '/' . $template . '.php';
+        $__macrolabFile = self::directory() . '/' . $template . '.php';
 
-        if (!is_file($__lunaFile)) {
+        if (!is_file($__macrolabFile)) {
             throw new RuntimeException('Template not found: ' . $template);
         }
 
@@ -36,7 +36,7 @@ final class View
 
         ob_start();
         try {
-            require $__lunaFile;
+            require $__macrolabFile;
         } catch (\Throwable $e) {
             ob_end_clean();
             throw $e;

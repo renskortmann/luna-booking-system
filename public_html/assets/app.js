@@ -1,5 +1,5 @@
 /*
- * LUNA OD6 booking system - browser behaviour.
+ * Macrolab website - browser behaviour.
  *
  * The calendar mirrors the booking rules so the UI is pleasant to use, but the
  * server enforces them. Nothing here is a security control: every write is

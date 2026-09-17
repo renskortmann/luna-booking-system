@@ -8,7 +8,7 @@
  * @var int                        $total
  */
 
-use Luna\Clock;
+use Macrolab\Clock;
 ?>
 <section class="card">
     <h1>Audit log</h1>

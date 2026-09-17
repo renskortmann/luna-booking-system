@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
-use Luna\Auth\AccessDeniedException;
-use Luna\Auth\Identity;
-use Luna\Http\HttpException;
+use Macrolab\Auth\AccessDeniedException;
+use Macrolab\Auth\Identity;
+use Macrolab\Http\HttpException;
 
 /**
  * Who is signed in, and the one gate that decides whether a verified identity

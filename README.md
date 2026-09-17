@@ -1,4 +1,4 @@
-# LUNA OD6 booking system
+# Macrolab website
 
 A small web application for reserving time on the lab's instruments, built to
 run on TU Delft LAMP hosting.
@@ -62,7 +62,7 @@ php app/cli/generate-key.php        # paste the output into app.key
 # fill in db credentials and set app.base_url to http://localhost:8000
 # and app.require_https to false
 
-mysql -e 'CREATE DATABASE luna_booking CHARACTER SET utf8mb4'
+mysql -e 'CREATE DATABASE macrolab CHARACTER SET utf8mb4'
 php app/cli/migrate.php
 php app/cli/create-admin.php
 
@@ -100,14 +100,14 @@ own login, and a plain `root`/empty-password guess over TCP, both get
 
   ```bash
   sudo mysql -e "
-  CREATE DATABASE IF NOT EXISTS luna_booking CHARACTER SET utf8mb4;
-  CREATE USER IF NOT EXISTS 'luna_dev'@'localhost' IDENTIFIED BY 'pick-a-password';
-  GRANT ALL PRIVILEGES ON luna_booking.* TO 'luna_dev'@'localhost';
+  CREATE DATABASE IF NOT EXISTS macrolab CHARACTER SET utf8mb4;
+  CREATE USER IF NOT EXISTS 'macrolab_dev'@'localhost' IDENTIFIED BY 'pick-a-password';
+  GRANT ALL PRIVILEGES ON macrolab.* TO 'macrolab_dev'@'localhost';
   FLUSH PRIVILEGES;
   "
   ```
 
-  Then put `luna_dev` / that password in `app/config.php`'s `db` block, and
+  Then put `macrolab_dev` / that password in `app/config.php`'s `db` block, and
   make sure `db.socket` is `null` there - a value left over from a different
   local MySQL instance (e.g. a scratch one from a previous test run) makes the
   app try to connect through a socket that no longer exists instead of over
@@ -119,10 +119,10 @@ own login, and a plain `root`/empty-password guess over TCP, both get
 ```bash
 vendor/bin/phpunit                    # unit tests, no database needed
 
-export LUNA_TEST_DB_NAME=luna_test    # a scratch database - it gets dropped
-export LUNA_TEST_DB_USER=root
-export LUNA_TEST_DB_PASS=
-mysql -e 'CREATE DATABASE luna_test CHARACTER SET utf8mb4'
+export MACROLAB_TEST_DB_NAME=macrolab_test    # a scratch database - it gets dropped
+export MACROLAB_TEST_DB_USER=root
+export MACROLAB_TEST_DB_PASS=
+mysql -e 'CREATE DATABASE macrolab_test CHARACTER SET utf8mb4'
 vendor/bin/phpunit                    # now the database tests run too
 
 bash tests/concurrency.sh             # two processes race for one slot, 20x

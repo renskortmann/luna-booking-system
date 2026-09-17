@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Integration;
+namespace Macrolab\Tests\Integration;
 
-use Luna\Clock;
-use Luna\Db;
-use Luna\Invite;
-use Luna\Users;
+use Macrolab\Clock;
+use Macrolab\Db;
+use Macrolab\Invite;
+use Macrolab\Users;
 
 /**
  * The single-use links that hand out access. This is how every account is

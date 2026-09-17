@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Unit;
+namespace Macrolab\Tests\Unit;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Luna\BookingRules;
-use Luna\RuleSet;
+use Macrolab\BookingRules;
+use Macrolab\RuleSet;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Luna\Controller;
+namespace Macrolab\Controller;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use Luna\Actor;
-use Luna\Auth;
-use Luna\Booking;
-use Luna\BookingException;
-use Luna\BookingPolicy;
-use Luna\BookingService;
-use Luna\Bookings;
-use Luna\Clock;
-use Luna\Csrf;
-use Luna\Http\HttpException;
-use Luna\Http\Request;
-use Luna\Http\Response;
-use Luna\Resources;
-use Luna\Users;
+use Macrolab\Actor;
+use Macrolab\Auth;
+use Macrolab\Booking;
+use Macrolab\BookingException;
+use Macrolab\BookingPolicy;
+use Macrolab\BookingService;
+use Macrolab\Bookings;
+use Macrolab\Clock;
+use Macrolab\Csrf;
+use Macrolab\Http\HttpException;
+use Macrolab\Http\Request;
+use Macrolab\Http\Response;
+use Macrolab\Resources;
+use Macrolab\Users;
 
 /**
  * The JSON API the calendar talks to.

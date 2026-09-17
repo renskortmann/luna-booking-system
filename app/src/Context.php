@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
-use Luna\Http\Request;
+use Macrolab\Http\Request;
 
 /**
  * The request currently being handled. Exists so that cross-cutting concerns -

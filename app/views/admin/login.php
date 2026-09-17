@@ -4,7 +4,7 @@
  * @var string|null $error
  */
 
-use Luna\Csrf;
+use Macrolab\Csrf;
 ?>
 <section class="card narrow">
     <h1>Administrator sign-in</h1>

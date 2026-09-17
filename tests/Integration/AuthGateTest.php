@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Integration;
+namespace Macrolab\Tests\Integration;
 
-use Luna\Auth;
-use Luna\Auth\AccessDeniedException;
-use Luna\Auth\Identity;
-use Luna\Db;
-use Luna\Users;
+use Macrolab\Auth;
+use Macrolab\Auth\AccessDeniedException;
+use Macrolab\Auth\Identity;
+use Macrolab\Db;
+use Macrolab\Users;
 
 /**
  * The allowlist gate in Auth::signIn().

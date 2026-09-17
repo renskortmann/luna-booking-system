@@ -3,7 +3,7 @@
 # Two processes race for the same slot, twenty times over. Exactly one must win
 # each round, and the database must be left holding exactly one booking.
 #
-#   export LUNA_TEST_DB_NAME=luna_test LUNA_TEST_DB_USER=... LUNA_TEST_DB_PASS=...
+#   export MACROLAB_TEST_DB_NAME=macrolab_test MACROLAB_TEST_DB_USER=... MACROLAB_TEST_DB_PASS=...
 #   bash tests/concurrency.sh
 #
 # This exercises the resource row lock from two separate connections, which is
@@ -13,8 +13,8 @@ set -uo pipefail
 
 cd "$(dirname "$0")/.."
 
-if [[ -z "${LUNA_TEST_DB_NAME:-}" ]]; then
-    echo "Set LUNA_TEST_DB_NAME (and LUNA_TEST_DB_USER / _PASS) first." >&2
+if [[ -z "${MACROLAB_TEST_DB_NAME:-}" ]]; then
+    echo "Set MACROLAB_TEST_DB_NAME (and MACROLAB_TEST_DB_USER / _PASS) first." >&2
     exit 1
 fi
 
@@ -26,9 +26,9 @@ failures=0
 reset_db() {
     php -r '
         require "vendor/autoload.php";
-        Luna\Config::set(require "tests/test-config.php");
+        Macrolab\Config::set(require "tests/test-config.php");
         date_default_timezone_set("UTC");
-        $pdo = Luna\Db::init((array) Luna\Config::get("db"))->pdo();
+        $pdo = Macrolab\Db::init((array) Macrolab\Config::get("db"))->pdo();
         $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
         foreach ($pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN) as $t) {
             $pdo->exec("DROP TABLE IF EXISTS `" . $t . "`");
@@ -36,17 +36,17 @@ reset_db() {
         $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
         $sql = preg_replace("/^\s*--.*$/m", "", file_get_contents("app/migrations/001_init.sql"));
         foreach (explode(";", $sql) as $s) { $s = trim($s); if ($s !== "") { $pdo->exec($s); } }
-        Luna\Users::create("alice");
-        Luna\Users::create("bob");
+        Macrolab\Users::create("alice");
+        Macrolab\Users::create("bob");
     '
 }
 
 count_confirmed() {
     php -r '
         require "vendor/autoload.php";
-        Luna\Config::set(require "tests/test-config.php");
+        Macrolab\Config::set(require "tests/test-config.php");
         date_default_timezone_set("UTC");
-        $db = Luna\Db::init((array) Luna\Config::get("db"));
+        $db = Macrolab\Db::init((array) Macrolab\Config::get("db"));
         echo (int) $db->value("SELECT COUNT(*) FROM bookings WHERE status = \"confirmed\"");
     '
 }

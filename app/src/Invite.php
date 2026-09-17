@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 /**
  * Single-use links that let a lab member set their own password. This is how

@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Integration;
+namespace Macrolab\Tests\Integration;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Luna\Actor;
-use Luna\Booking;
-use Luna\BookingException;
-use Luna\BookingService;
-use Luna\Bookings;
-use Luna\Clock;
-use Luna\Http\HttpException;
-use Luna\Resources;
-use Luna\Settings;
-use Luna\User;
-use Luna\Users;
+use Macrolab\Actor;
+use Macrolab\Booking;
+use Macrolab\BookingException;
+use Macrolab\BookingService;
+use Macrolab\Bookings;
+use Macrolab\Clock;
+use Macrolab\Http\HttpException;
+use Macrolab\Resources;
+use Macrolab\Settings;
+use Macrolab\User;
+use Macrolab\Users;
 
 /**
  * Booking, changing and cancelling, against a real database - because the
@@ -183,7 +183,7 @@ final class BookingServiceTest extends DatabaseTestCase
             // expected
         }
 
-        self::assertSame(1, (int) \Luna\Db::get()->value(
+        self::assertSame(1, (int) \Macrolab\Db::get()->value(
             'SELECT COUNT(*) FROM audit_log WHERE action = ?', ['booking_change_refused']
         ));
     }
@@ -256,7 +256,7 @@ final class BookingServiceTest extends DatabaseTestCase
         $booking = $this->book($this->alice, '11:00', '12:00');
         BookingService::delete(Actor::forAdmin(), $booking);
 
-        $row = \Luna\Db::get()->one('SELECT details FROM audit_log WHERE action = ?', ['booking_deleted']);
+        $row = \Macrolab\Db::get()->one('SELECT details FROM audit_log WHERE action = ?', ['booking_deleted']);
 
         self::assertNotNull($row);
         self::assertStringContainsString('alice', (string) $row['details']);

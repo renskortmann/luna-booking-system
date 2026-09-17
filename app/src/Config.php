@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 use RuntimeException;
 
@@ -101,7 +101,7 @@ final class Config
         return rtrim(self::string('app.base_url'), '/');
     }
 
-    /** Path prefix the app is mounted under, e.g. "" or "/luna". */
+    /** Path prefix the app is mounted under, e.g. "" or "/macrolab". */
     public static function basePath(): string
     {
         $path = (string) parse_url(self::baseUrl(), PHP_URL_PATH);

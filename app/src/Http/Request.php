@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Luna\Http;
+namespace Macrolab\Http;
 
-use Luna\Config;
+use Macrolab\Config;
 
 /**
  * The incoming request, normalised. `path` is always relative to the directory
  * the app is mounted in, so the same routes work at https://host/ and at
- * https://host/luna/.
+ * https://host/macrolab/.
  */
 final class Request
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 /**
  * Operational settings the admin edits in the web UI: the booking rules and the

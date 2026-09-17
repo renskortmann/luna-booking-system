@@ -11,10 +11,10 @@ declare(strict_types=1);
  * administrator already exists.
  */
 
-use Luna\AdminAuth;
-use Luna\Config;
-use Luna\Db;
-use Luna\Password;
+use Macrolab\AdminAuth;
+use Macrolab\Config;
+use Macrolab\Db;
+use Macrolab\Password;
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);

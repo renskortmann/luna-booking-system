@@ -1,4 +1,4 @@
--- LUNA OD6 booking system - initial schema.
+-- Macrolab website - initial schema.
 --
 -- All DATETIME columns store UTC. Nothing in the database is in local time;
 -- conversion to Europe/Amsterdam happens only at display. This keeps bookings
@@ -160,6 +160,7 @@ CREATE TABLE saml_assertion_ids (
     KEY ix_assertion_expiry (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- The one machine this system exists for.
+-- A first machine, so a fresh installation has something bookable. The lab runs
+-- several; the rest are added in the administration pages.
 INSERT INTO resources (name, slug, description, is_active, created_at)
 VALUES ('LUNA OD6', 'luna-od6', 'LUNA OD6 machine', 1, UTC_TIMESTAMP());

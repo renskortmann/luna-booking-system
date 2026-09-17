@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Luna\Auth;
+namespace Macrolab\Auth;
 
-use Luna\Http\Request;
-use Luna\Http\Response;
+use Macrolab\Http\Request;
+use Macrolab\Http\Response;
 
 /**
  * The seam between "how someone proved who they are" and everything else.

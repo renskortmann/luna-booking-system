@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Unit;
+namespace Macrolab\Tests\Unit;
 
-use Luna\Http\HttpException;
-use Luna\Http\Request;
-use Luna\Http\Response;
-use Luna\Router;
+use Macrolab\Http\HttpException;
+use Macrolab\Http\Request;
+use Macrolab\Http\Response;
+use Macrolab\Router;
 use PHPUnit\Framework\TestCase;
 
 final class RouterTest extends TestCase

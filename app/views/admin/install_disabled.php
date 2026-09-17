@@ -13,7 +13,7 @@
         this page with the token in the address:
     </p>
 
-    <pre><code><?= e(rtrim(\Luna\Config::baseUrl(), '/')) ?>/install?token=...</code></pre>
+    <pre><code><?= e(rtrim(\Macrolab\Config::baseUrl(), '/')) ?>/install?token=...</code></pre>
 
     <p class="muted small">
         The token exists so that nobody who happens to find this address during

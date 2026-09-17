@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
-use Luna\Auth\Identity;
+use Macrolab\Auth\Identity;
 
 /**
  * Every query against the `users` table. That table is the access allowlist:

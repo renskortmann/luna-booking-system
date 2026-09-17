@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Luna\Tests\Integration;
+namespace Macrolab\Tests\Integration;
 
-use Luna\AdminAuth;
-use Luna\Clock;
-use Luna\Crypto;
-use Luna\Db;
+use Macrolab\AdminAuth;
+use Macrolab\Clock;
+use Macrolab\Crypto;
+use Macrolab\Db;
 use OTPHP\TOTP;
 use RuntimeException;
 

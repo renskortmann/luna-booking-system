@@ -32,7 +32,7 @@ if (!function_exists('url')) {
     /** Absolute URL for an app-relative path, honouring a subdirectory mount. */
     function url(string $path = '/'): string
     {
-        return \Luna\Config::baseUrl() . '/' . ltrim($path, '/');
+        return \Macrolab\Config::baseUrl() . '/' . ltrim($path, '/');
     }
 }
 
@@ -40,7 +40,7 @@ if (!function_exists('path')) {
     /** Root-relative URL for an app-relative path (for href/action attributes). */
     function path(string $path = '/'): string
     {
-        $base = \Luna\Config::basePath();
+        $base = \Macrolab\Config::basePath();
 
         return ($base === '' ? '' : $base) . '/' . ltrim($path, '/');
     }

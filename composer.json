@@ -1,6 +1,6 @@
 {
-    "name": "tudelft/luna-booking-system",
-    "description": "Booking system for the LUNA OD6 machine, for deployment on a TU Delft LAMP server.",
+    "name": "tudelft/macrolab-website",
+    "description": "Lab instrument booking and time registration for the Macrolab, for deployment on a TU Delft LAMP server.",
     "type": "project",
     "license": "MIT",
     "require": {
@@ -19,7 +19,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Luna\\": "app/src/"
+            "Macrolab\\": "app/src/"
         },
         "files": [
             "app/src/helpers.php"
@@ -27,7 +27,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Luna\\Tests\\": "tests/"
+            "Macrolab\\Tests\\": "tests/"
         }
     },
     "config": {

@@ -12,9 +12,9 @@ declare(strict_types=1);
  * does exactly the same thing. See README.md.
  */
 
-use Luna\Config;
-use Luna\Db;
-use Luna\Migrator;
+use Macrolab\Config;
+use Macrolab\Db;
+use Macrolab\Migrator;
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);

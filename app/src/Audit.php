@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna;
+namespace Macrolab;
 
 /**
  * Append-only record of who did what. Written for every booking change, every
@@ -45,7 +45,7 @@ final class Audit
         } catch (\Throwable $e) {
             // An audit write must never take down the action it is recording;
             // losing the entry is bad, losing the booking is worse.
-            error_log('[luna] audit write failed for "' . $action . '": ' . $e->getMessage());
+            error_log('[macrolab] audit write failed for "' . $action . '": ' . $e->getMessage());
         }
     }
 

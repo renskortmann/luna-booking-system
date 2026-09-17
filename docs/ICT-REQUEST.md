@@ -1,4 +1,4 @@
-# Request: register a SAML service provider for the LUNA OD6 booking system
+# Request: register a SAML service provider for the Macrolab website
 
 *Draft to send to TU Delft ICT. Replace every `<...>` placeholder before sending.
 Written for ICT identity-management staff, not for the lab.*
@@ -13,8 +13,8 @@ members can sign in with their netID.
 
 | | |
 |---|---|
-| Name | LUNA OD6 booking system |
-| Purpose | Reserving time on the LUNA OD6 instrument in `<faculty / department / lab>` |
+| Name | Macrolab website |
+| Purpose | Reserving time on the lab instruments in `<faculty / department / lab>`, and time registration for its employees |
 | URL | `https://<host>/` |
 | Owner / contact | `<name>`, `<email>`, `<phone>` |
 | Hosted on | TU Delft LAMP hosting, `<server or hosting request reference>` |

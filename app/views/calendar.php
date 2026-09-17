@@ -6,13 +6,13 @@
  *
  * @var array<string, mixed>       $resource
  * @var list<array<string, mixed>> $machines
- * @var \Luna\Actor                $actor
- * @var \Luna\RuleSet              $rules
+ * @var \Macrolab\Actor                $actor
+ * @var \Macrolab\RuleSet              $rules
  * @var string                     $csrf
  * @var array<string, mixed>       $clientRules
  */
 
-use Luna\BookingRules;
+use Macrolab\BookingRules;
 ?>
 <section class="card">
     <div class="calendar-head">

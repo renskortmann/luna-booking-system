@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Luna\Http;
+namespace Macrolab\Http;
 
 final class Response
 {

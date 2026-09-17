@@ -4,7 +4,7 @@
  * @var string|null                $error
  */
 
-use Luna\Csrf;
+use Macrolab\Csrf;
 ?>
 <section class="card">
     <h1>Machines</h1>
@@ -25,7 +25,7 @@ use Luna\Csrf;
         <input type="hidden" name="action" value="add">
 
         <label for="name">Name</label>
-        <input id="name" name="name" type="text" required maxlength="128" placeholder="LUNA OD7">
+        <input id="name" name="name" type="text" required maxlength="128" placeholder="Optical bench 2">
 
         <label for="description">Description <span class="muted">(optional)</span></label>
         <input id="description" name="description" type="text" placeholder="second optical bench">

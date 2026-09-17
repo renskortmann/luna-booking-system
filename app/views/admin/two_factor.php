@@ -1,7 +1,7 @@
 <?php
 /** @var string|null $error */
 
-use Luna\Csrf;
+use Macrolab\Csrf;
 ?>
 <section class="card narrow">
     <h1>One-time code</h1>
