@@ -251,3 +251,27 @@ ul.codes li { margin: 0.2rem 0; }
     form.row { flex-direction: column; align-items: stretch; }
     dl.facts { grid-template-columns: 1fr; }
 }
+
+/* ----------------------------------------------------------------- hub --- */
+
+.tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 1rem;
+}
+
+.tile {
+    display: block;
+    padding: 1.1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.tile:hover,
+.tile:focus-visible { border-color: var(--accent); }
+
+.tile h2 { margin: 0 0 0.3rem; }
+.tile p  { margin: 0; color: var(--ink-muted); font-size: 0.9rem; }

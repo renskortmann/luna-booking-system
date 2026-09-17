@@ -16,7 +16,7 @@ use Macrolab\Session;
 use Macrolab\View;
 
 /**
- * The calendar - the page the system exists for.
+ * The booking calendar, one machine at a time. Reached from the hub at /.
  */
 final class CalendarController
 {

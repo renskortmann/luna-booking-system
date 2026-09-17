@@ -23,7 +23,7 @@ use Macrolab\BookingRules;
             <?php endif; ?>
 
             <?php if (count($machines) > 1): ?>
-                <form method="get" action="<?= e(path('/')) ?>" class="machine-picker">
+                <form method="get" action="<?= e(path('/booking')) ?>" class="machine-picker">
                     <label for="machine">Machine</label>
                     <select id="machine" name="machine" data-auto-submit>
                         <?php foreach ($machines as $machine): ?>

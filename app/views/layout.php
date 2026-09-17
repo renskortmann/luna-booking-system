@@ -9,6 +9,7 @@
 use Macrolab\Auth;
 use Macrolab\Config;
 use Macrolab\Csrf;
+use Macrolab\Navigation;
 use Macrolab\Session;
 
 $user = Auth::user();
@@ -29,19 +30,15 @@ $flashes = Session::takeFlashes();
     <a class="brand" href="<?= e(path('/')) ?>"><?= e(Config::string('app.name', 'Macrolab website')) ?></a>
 
     <nav>
-        <?php if ($isAdmin): ?>
-            <span class="who">Administrator</span>
-            <a href="<?= e(path('/')) ?>">Calendar</a>
-            <a href="<?= e(path('/admin')) ?>">Admin</a>
-            <form method="post" action="<?= e(path('/admin/logout')) ?>" class="inline">
-                <?= Csrf::field() ?>
-                <button type="submit" class="link">Sign out</button>
-            </form>
-        <?php elseif ($user !== null): ?>
-            <span class="who"><?= e($user->label()) ?></span>
-            <a href="<?= e(path('/')) ?>">Calendar</a>
-            <a href="<?= e(path('/account')) ?>">My account</a>
-            <form method="post" action="<?= e(path('/logout')) ?>" class="inline">
+        <?php if ($isAdmin || $user !== null): ?>
+            <span class="who"><?= e($isAdmin ? 'Administrator' : $user->label()) ?></span>
+
+            <?php /* One list, shared with the hub page. See Macrolab\Navigation. */ ?>
+            <?php foreach (Navigation::destinations(Auth::actor()) as $destination): ?>
+                <a href="<?= e(path($destination['href'])) ?>"><?= e($destination['label']) ?></a>
+            <?php endforeach; ?>
+
+            <form method="post" action="<?= e(path($isAdmin ? '/admin/logout' : '/logout')) ?>" class="inline">
                 <?= Csrf::field() ?>
                 <button type="submit" class="link">Sign out</button>
             </form>

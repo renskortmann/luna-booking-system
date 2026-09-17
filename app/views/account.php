@@ -43,7 +43,7 @@ use Macrolab\Csrf;
             <?php endforeach; ?>
             </tbody>
         </table>
-        <p class="muted small">Changes and cancellations are made on the <a href="<?= e(path('/')) ?>">calendar</a>.</p>
+        <p class="muted small">Changes and cancellations are made on the <a href="<?= e(path('/booking')) ?>">calendar</a>.</p>
     <?php endif; ?>
 </section>
 

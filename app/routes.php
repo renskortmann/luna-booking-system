@@ -12,12 +12,17 @@ use Macrolab\Controller\AdminController;
 use Macrolab\Controller\AuthController;
 use Macrolab\Controller\BookingApiController;
 use Macrolab\Controller\CalendarController;
+use Macrolab\Controller\HubController;
 use Macrolab\Router;
 
 $router = new Router();
 
+// ------------------------------------------------------------------- macrolab
+// The front door. Signing in lands here and picks a system from it.
+$router->get('/', [HubController::class, 'show']);
+
 // ------------------------------------------------------------------- calendar
-$router->get('/', [CalendarController::class, 'show']);
+$router->get('/booking', [CalendarController::class, 'show']);
 
 // The JSON API the calendar talks to. Every write verifies the CSRF token and
 // re-checks ownership against the stored booking.

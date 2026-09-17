@@ -3,7 +3,10 @@
 A small web application for reserving time on the lab's instruments, built to
 run on TU Delft LAMP hosting.
 
-Lab members sign in, pick a machine, and book, change or cancel their own time
+Signing in lands on the **hub** at `/`, which is the front door to the site's
+systems. Today that is the booking system at `/booking`.
+
+Lab members pick a machine there and book, change or cancel their own time
 slots on its shared calendar - and only their own. One administrator controls
 who may sign in at all, manages the list of machines, and can create, change or
 delete any booking.
@@ -417,7 +420,8 @@ re-register.
 The administrator manages the bookable machines at `/admin/machines`. Each
 booking belongs to one machine, and the calendar shows one machine at a time:
 its name is the heading, and a dropdown switches between them. The choice is
-remembered for the next visit, and `/?machine=<slug>` links straight to one.
+remembered for the next visit, and `/booking?machine=<slug>` links straight to
+one.
 
 A machine with bookings on record cannot be deleted, only retired - the same
 reasoning as suspending a user rather than deleting them, so the record of who
