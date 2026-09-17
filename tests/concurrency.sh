@@ -28,14 +28,15 @@ reset_db() {
         require "vendor/autoload.php";
         Macrolab\Config::set(require "tests/test-config.php");
         date_default_timezone_set("UTC");
-        $pdo = Macrolab\Db::init((array) Macrolab\Config::get("db"))->pdo();
+        $db = Macrolab\Db::init((array) Macrolab\Config::get("db"));
+        $pdo = $db->pdo();
         $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
         foreach ($pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN) as $t) {
             $pdo->exec("DROP TABLE IF EXISTS `" . $t . "`");
         }
         $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
-        $sql = preg_replace("/^\s*--.*$/m", "", file_get_contents("app/migrations/001_init.sql"));
-        foreach (explode(";", $sql) as $s) { $s = trim($s); if ($s !== "") { $pdo->exec($s); } }
+        // Through the Migrator, so a new migration needs no edit here.
+        (new Macrolab\Migrator($db))->migrate();
         Macrolab\Users::create("alice");
         Macrolab\Users::create("bob");
     '

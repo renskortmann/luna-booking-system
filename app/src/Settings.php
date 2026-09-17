@@ -33,6 +33,14 @@ final class Settings
         'min_change_notice_minutes'    => '60',
         'allow_booking_in_past'        => '0',
 
+        // Time registration. Unrelated to the booking rules above: these govern
+        // the hours employees log, which have nothing to do with the machines.
+        'time_min_entry_minutes' => '5',
+        'time_max_entry_minutes' => '720',   // 12 hours in one entry
+        'time_max_day_minutes'   => '960',   // 16 hours across a whole day
+        'time_max_future_days'   => '7',
+        'time_max_backdate_days' => '90',
+
         // Housekeeping.
         'audit_retention_days' => '365',
     ];

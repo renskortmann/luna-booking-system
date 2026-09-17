@@ -39,9 +39,14 @@ final class Navigation
                     'blurb' => 'The shared calendar for the lab instruments.',
                 ],
                 [
+                    'href'  => '/admin/time',
+                    'label' => 'Time overview',
+                    'blurb' => 'What everyone has logged, with filters and a CSV export.',
+                ],
+                [
                     'href'  => '/admin',
                     'label' => 'Administration',
-                    'blurb' => 'People, machines, rules and the audit log.',
+                    'blurb' => 'People, machines, projects, rules and the audit log.',
                 ],
             ];
         }
@@ -51,6 +56,11 @@ final class Navigation
                 'href'  => '/booking',
                 'label' => 'Booking',
                 'blurb' => 'Book time on a lab instrument, and change or cancel your own bookings.',
+            ],
+            [
+                'href'  => '/time',
+                'label' => 'Time registration',
+                'blurb' => 'Log the hours you worked, against the project you worked on.',
             ],
             [
                 'href'  => '/account',

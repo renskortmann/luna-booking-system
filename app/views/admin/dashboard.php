@@ -20,7 +20,9 @@ use Macrolab\Clock;
         <a href="<?= e(path('/admin/users')) ?>">Who may sign in</a>
         <a href="<?= e(path('/admin/machines')) ?>">Machines</a>
         <a href="<?= e(path('/admin/bookings')) ?>">All bookings</a>
-        <a href="<?= e(path('/admin/settings')) ?>">Booking rules</a>
+        <a href="<?= e(path('/admin/projects')) ?>">Projects</a>
+        <a href="<?= e(path('/admin/time')) ?>">Time overview</a>
+        <a href="<?= e(path('/admin/settings')) ?>">Rules</a>
         <a href="<?= e(path('/admin/audit')) ?>">Audit log</a>
         <a href="<?= e(path('/admin/system')) ?>">System</a>
     </nav>

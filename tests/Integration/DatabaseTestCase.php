@@ -8,6 +8,7 @@ use Macrolab\Auth;
 use Macrolab\Clock;
 use Macrolab\Config;
 use Macrolab\Db;
+use Macrolab\Migrator;
 use Macrolab\Settings;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -62,6 +63,15 @@ abstract class DatabaseTestCase extends TestCase
         $_SESSION = [];
     }
 
+    /**
+     * Drop everything, then apply every migration through the Migrator the
+     * application itself uses.
+     *
+     * Naming a migration file here instead would mean this harness had to be
+     * edited every time one was added, and the failure when somebody forgot
+     * would be a confusing "table doesn't exist" rather than anything pointing
+     * at the cause.
+     */
     private function rebuildSchema(Db $db): void
     {
         $pdo = $db->pdo();
@@ -74,14 +84,6 @@ abstract class DatabaseTestCase extends TestCase
 
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
 
-        $sql = (string) file_get_contents(dirname(__DIR__, 2) . '/app/migrations/001_init.sql');
-        $sql = preg_replace('/^\s*--.*$/m', '', $sql) ?? $sql;
-
-        foreach (explode(';', $sql) as $statement) {
-            $statement = trim($statement);
-            if ($statement !== '') {
-                $pdo->exec($statement);
-            }
-        }
+        (new Migrator($db))->migrate();
     }
 }

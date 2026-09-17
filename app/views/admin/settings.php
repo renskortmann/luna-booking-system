@@ -28,10 +28,11 @@ $timeField = static function (string $name, string $selected) use ($times): stri
 };
 ?>
 <section class="card">
-    <h1>Booking rules</h1>
+    <h1>Rules</h1>
 
     <p class="muted small">
-        These apply to lab members. They do not apply to you.
+        The booking rules and the time registration rules, which have nothing to
+        do with each other. Both apply to lab members. Neither applies to you.
     </p>
 
     <?php if ($error !== null): ?>
@@ -132,6 +133,41 @@ $timeField = static function (string $name, string $selected) use ($times): stri
             <input id="audit_retention_days" name="audit_retention_days" type="number"
                    min="30" max="3650" required
                    value="<?= e($settings['audit_retention_days'] ?? '365') ?>">
+        </fieldset>
+
+        <fieldset>
+            <legend>Time registration</legend>
+
+            <p class="muted small">
+                These govern the hours employees log. They are unrelated to the
+                booking rules above: time is logged against a project, never
+                against a machine.
+            </p>
+
+            <label for="time_min_entry_minutes">Shortest entry (minutes)</label>
+            <input id="time_min_entry_minutes" name="time_min_entry_minutes" type="number"
+                   min="1" max="1440" required
+                   value="<?= e($settings['time_min_entry_minutes'] ?? '5') ?>">
+
+            <label for="time_max_entry_minutes">Longest single entry (minutes)</label>
+            <input id="time_max_entry_minutes" name="time_max_entry_minutes" type="number"
+                   min="1" max="1440" required
+                   value="<?= e($settings['time_max_entry_minutes'] ?? '720') ?>">
+
+            <label for="time_max_day_minutes">Most that can be logged on one day (minutes)</label>
+            <input id="time_max_day_minutes" name="time_max_day_minutes" type="number"
+                   min="1" max="1440" required
+                   value="<?= e($settings['time_max_day_minutes'] ?? '960') ?>">
+
+            <label for="time_max_future_days">How far ahead time may be logged (days)</label>
+            <input id="time_max_future_days" name="time_max_future_days" type="number"
+                   min="0" max="365" required
+                   value="<?= e($settings['time_max_future_days'] ?? '7') ?>">
+
+            <label for="time_max_backdate_days">How far back time may be logged (days)</label>
+            <input id="time_max_backdate_days" name="time_max_backdate_days" type="number"
+                   min="0" max="3650" required
+                   value="<?= e($settings['time_max_backdate_days'] ?? '90') ?>">
         </fieldset>
 
         <button type="submit" class="primary">Save settings</button>

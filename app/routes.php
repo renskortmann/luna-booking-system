@@ -9,10 +9,12 @@ declare(strict_types=1);
 
 use Macrolab\Controller\AccountController;
 use Macrolab\Controller\AdminController;
+use Macrolab\Controller\AdminTimeController;
 use Macrolab\Controller\AuthController;
 use Macrolab\Controller\BookingApiController;
 use Macrolab\Controller\CalendarController;
 use Macrolab\Controller\HubController;
+use Macrolab\Controller\TimeController;
 use Macrolab\Router;
 
 $router = new Router();
@@ -30,6 +32,12 @@ $router->get('/api/bookings', [BookingApiController::class, 'feed']);
 $router->post('/api/bookings', [BookingApiController::class, 'create']);
 $router->post('/api/bookings/{id}', [BookingApiController::class, 'update']);
 $router->post('/api/bookings/{id}/cancel', [BookingApiController::class, 'cancel']);
+
+// ---------------------------------------------------------- time registration
+// Unrelated to the booking system above; the two share only the sign-in.
+$router->form('/time', [TimeController::class, 'show']);
+$router->form('/time/{id}', [TimeController::class, 'edit']);
+$router->post('/time/{id}/delete', [TimeController::class, 'delete']);
 
 // --------------------------------------------------------------------- access
 $router->form('/login', [AuthController::class, 'login']);
@@ -54,6 +62,13 @@ $router->form('/admin/machines', [AdminController::class, 'machines']);
 $router->form('/admin/bookings', [AdminController::class, 'bookings']);
 $router->form('/admin/settings', [AdminController::class, 'settings']);
 $router->get('/admin/audit', [AdminController::class, 'audit']);
+
+// The project list, and the read-only view of what everyone has logged. The
+// dot in the export path is literal: Router::compile() quotes the pattern.
+$router->form('/admin/projects', [AdminTimeController::class, 'projects']);
+$router->get('/admin/time', [AdminTimeController::class, 'entries']);
+$router->get('/admin/time.csv', [AdminTimeController::class, 'export']);
+
 $router->form('/admin/system', [AdminController::class, 'system']);
 
 // Creates the administrator account, then stops existing.

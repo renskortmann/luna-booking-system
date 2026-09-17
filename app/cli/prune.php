@@ -10,6 +10,10 @@ declare(strict_types=1);
  * Deletes audit entries past the retention window set in the admin UI, spent
  * or expired invite links, old login-attempt records, and expired SAML
  * assertion ids.
+ *
+ * Everything here is a log or a spent token. Bookings and time entries are
+ * business records and are NEVER pruned - do not add them by analogy, or a
+ * nightly cron job will quietly destroy last year's timesheets.
  */
 
 use Macrolab\Audit;

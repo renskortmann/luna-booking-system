@@ -64,7 +64,7 @@ use Macrolab\Csrf;
             <thead>
             <tr>
                 <th>netID</th><th>Name</th><th>Status</th><th>Password</th>
-                <th>Bookings</th><th>Last signed in</th><th>Actions</th>
+                <th>Bookings</th><th>Time entries</th><th>Last signed in</th><th>Actions</th>
             </tr>
             </thead>
             <tbody>
@@ -89,6 +89,7 @@ use Macrolab\Csrf;
                         <?php endif; ?>
                     </td>
                     <td><?= e($row['booking_count']) ?></td>
+                    <td><?= e($row['time_entry_count']) ?></td>
                     <td><?= $row['last_login_at'] !== null
                             ? e(Clock::local(Clock::fromSql((string) $row['last_login_at']), 'j M Y H:i'))
                             : '<span class="muted">never</span>' ?></td>
@@ -111,7 +112,8 @@ use Macrolab\Csrf;
                             <?php endif; ?>
                         </form>
 
-                        <?php if ((int) $row['booking_count'] === 0): ?>
+                        <?php /* Both restrict at the database, so both gate the button. */ ?>
+                        <?php if ((int) $row['booking_count'] === 0 && (int) $row['time_entry_count'] === 0): ?>
                             <form method="post" action="<?= e(path('/admin/users')) ?>" class="inline"
                                   data-confirm="Remove <?= e($row['netid']) ?> from the allowlist?">
                                 <?= Csrf::field() ?>

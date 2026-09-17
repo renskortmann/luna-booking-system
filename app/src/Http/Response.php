@@ -43,6 +43,31 @@ final class Response
         return new self($body, $status, ['Content-Type' => 'application/xml; charset=UTF-8']);
     }
 
+    /**
+     * A file the browser saves rather than renders.
+     *
+     * The filename describes what was exported and so is built from request
+     * data. Reducing it to a safe alphabet settles the header-injection
+     * question outright instead of resting on how the quoting is escaped.
+     */
+    public static function download(
+        string $body,
+        string $filename,
+        string $contentType = 'text/csv; charset=UTF-8',
+    ): self {
+        $safe = preg_replace('/[^A-Za-z0-9._-]/', '_', $filename) ?? '';
+
+        if ($safe === '') {
+            $safe = 'download';
+        }
+
+        return new self($body, 200, [
+            'Content-Type'        => $contentType,
+            'Content-Disposition' => 'attachment; filename="' . $safe . '"',
+            'Cache-Control'       => 'no-store',
+        ]);
+    }
+
     /** Redirect to an app-relative path, e.g. Response::redirect('/login'). */
     public static function redirect(string $path, int $status = 302): self
     {

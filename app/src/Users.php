@@ -46,6 +46,8 @@ final class Users
                     u.note, u.created_at, u.first_login_at, u.last_login_at,
                     (SELECT COUNT(*) FROM bookings b
                       WHERE b.user_id = u.id AND b.status = "confirmed") AS booking_count,
+                    (SELECT COUNT(*) FROM time_entries t
+                      WHERE t.user_id = u.id) AS time_entry_count,
                     (SELECT MIN(i.expires_at) FROM user_invites i
                       WHERE i.user_id = u.id AND i.used_at IS NULL AND i.expires_at > ?)
                         AS pending_invite_expires
@@ -113,6 +115,16 @@ final class Users
     public static function countBookings(int $userId): int
     {
         return (int) Db::get()->value('SELECT COUNT(*) FROM bookings WHERE user_id = ?', [$userId]);
+    }
+
+    /**
+     * Time entries name their owner and the foreign key restricts, so this is
+     * checked before a delete for the same reason bookings are: without it the
+     * database refuses and the admin sees a 500 rather than an explanation.
+     */
+    public static function countTimeEntries(int $userId): int
+    {
+        return (int) Db::get()->value('SELECT COUNT(*) FROM time_entries WHERE user_id = ?', [$userId]);
     }
 
     /**

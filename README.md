@@ -3,8 +3,10 @@
 A small web application for reserving time on the lab's instruments, built to
 run on TU Delft LAMP hosting.
 
-Signing in lands on the **hub** at `/`, which is the front door to the site's
-systems. Today that is the booking system at `/booking`.
+Signing in lands on the **hub** at `/`, which is the front door to two
+unrelated systems: **booking** at `/booking` and **time registration** at
+`/time`. They share the sign-in and nothing else - time is logged against a
+project, never against a machine.
 
 Lab members pick a machine there and book, change or cancel their own time
 slots on its shared calendar - and only their own. One administrator controls
@@ -432,6 +434,40 @@ use cannot be retired.
 Booking rules are shared by every machine. The per-person quota counts per
 machine, so filling up one instrument does not lock anybody out of the others.
 
+## Time registration
+
+Employees log the hours they worked at `/time`: a day, a project, a duration
+and an optional note. Hours can be typed as `3.5`, `3,5`, `3:30` or `3h30`, and
+are stored as whole minutes, so nothing is lost to rounding.
+
+**This system is not connected to the booking system.** A time entry names a
+project and never a machine. The two halves share the sign-in and nothing else,
+which is deliberate: hours are booked to work, not to equipment.
+
+Employees own their entries and can change or remove their own at any time -
+and only their own. A request naming somebody else's entry is refused with 403
+and recorded, the same discipline the bookings use.
+
+The administrator maintains the project list at `/admin/projects` and reads
+what everyone has logged at `/admin/time`, filtered by person, project and date
+range, with a CSV export of exactly those rows. That view is **read-only**:
+there is no approval step, and nobody edits somebody else's timesheet.
+
+A project with time on record cannot be deleted, only retired - the same
+reasoning as retiring a machine. For the same reason, an account with time
+registered cannot be removed from the allowlist, only suspended.
+
+The limits on entry length, on the daily total, and on how far ahead or back
+time may be logged are set alongside the booking rules at `/admin/settings`.
+
+The CSV is UTF-8 with a byte-order mark, so Excel reads accented names
+correctly. Any cell beginning with `=`, `+`, `-` or `@` is prefixed with an
+apostrophe, because spreadsheets execute those on open and the note field is
+typed by a user.
+
+Time entries are **never pruned**. `app/cli/prune.php` trims logs and spent
+tokens; hours are a business record.
+
 ---
 
 ## Layout
@@ -460,4 +496,11 @@ tests/                       unit tests, database tests, concurrency probe
 | `BookingRules`, `RuleSet` | the rules, as pure functions |
 | `BookingService` | writes, with the lock and the overlap check |
 | `BookingPolicy` | who may change which booking |
+| `Navigation` | the one list of destinations, shared by the hub and the top bar |
+| `TimeRules`, `TimeRuleSet` | the time rules and the hour/date parsing, as pure functions |
+| `TimeEntryService` | time writes, with the daily cap and the audit entry |
+| `TimeEntryPolicy` | who may change which time entry - the admin may not |
+| `Projects` | the project list time is logged against |
+| `TimeFilter` | one filter behind the admin table, its totals and the export |
+| `Csv` | the export, quoted and safe to open in a spreadsheet |
 | `Audit`, `RateLimit` | the record, and login throttling |

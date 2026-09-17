@@ -276,12 +276,22 @@ final class AdminController
                 return null;
 
             case 'delete':
-                // Bookings name their owner, so an account with history is
-                // suspended rather than deleted.
+                // Bookings and time entries both name their owner, so an
+                // account with either kind of history is suspended rather than
+                // deleted. Both foreign keys restrict, so skipping one of these
+                // checks means the database refuses and the admin gets a 500
+                // instead of an explanation.
                 if (Users::countBookings($user->id) > 0) {
                     throw new RuntimeException(
                         $user->netid . ' has bookings on record. Suspend the account instead of deleting it, '
                         . 'or delete those bookings first.'
+                    );
+                }
+
+                if (Users::countTimeEntries($user->id) > 0) {
+                    throw new RuntimeException(
+                        $user->netid . ' has time registered. Suspend the account instead of deleting it: '
+                        . 'those hours are a business record and are not thrown away with the account.'
                     );
                 }
 
@@ -534,7 +544,7 @@ final class AdminController
         }
 
         return View::page('admin/settings', [
-            'title'    => 'Booking rules',
+            'title'    => 'Rules',
             'settings' => Settings::all(),
             'error'    => $error,
         ], $error !== null ? 400 : 200);
@@ -551,6 +561,13 @@ final class AdminController
             'max_active_bookings_per_user' => [0, 100],
             'min_change_notice_minutes'    => [0, 7 * 24 * 60],
             'audit_retention_days'         => [30, 3650],
+
+            // Time registration. Unrelated to the booking rules above.
+            'time_min_entry_minutes'       => [1, 24 * 60],
+            'time_max_entry_minutes'       => [1, 24 * 60],
+            'time_max_day_minutes'         => [1, 24 * 60],
+            'time_max_future_days'         => [0, 365],
+            'time_max_backdate_days'       => [0, 3650],
         ];
 
         $values = [];
@@ -573,6 +590,14 @@ final class AdminController
 
         if ((int) $values['min_booking_minutes'] > (int) $values['max_booking_days'] * 24 * 60) {
             throw new RuntimeException('The shortest booking cannot be longer than the longest booking.');
+        }
+
+        if ((int) $values['time_min_entry_minutes'] > (int) $values['time_max_entry_minutes']) {
+            throw new RuntimeException('The shortest time entry cannot be longer than the longest one.');
+        }
+
+        if ((int) $values['time_max_entry_minutes'] > (int) $values['time_max_day_minutes']) {
+            throw new RuntimeException('A single time entry cannot be longer than a whole day\'s limit.');
         }
 
         foreach (['open_time', 'close_time'] as $key) {

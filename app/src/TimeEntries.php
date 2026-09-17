@@ -1,0 +1,133 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Macrolab;
+
+use DateTimeImmutable;
+
+/**
+ * Every query against the `time_entries` table.
+ */
+final class TimeEntries
+{
+    private const SELECT = 'SELECT t.id, t.user_id, t.project_id, t.worked_on, t.minutes, t.note,
+                                   p.name AS project_name, p.code AS project_code,
+                                   u.netid AS owner_netid, u.display_name AS owner_name
+                              FROM time_entries t
+                              JOIN projects p ON p.id = t.project_id
+                              JOIN users u ON u.id = t.user_id';
+
+    public static function find(int $id): ?TimeEntry
+    {
+        $row = Db::get()->one(self::SELECT . ' WHERE t.id = ?', [$id]);
+
+        return $row === null ? null : TimeEntry::fromRow($row);
+    }
+
+    /**
+     * One person's entries over a date range, newest day first. The timesheet.
+     *
+     * @return list<TimeEntry>
+     */
+    public static function forUser(int $userId, DateTimeImmutable $from, DateTimeImmutable $to): array
+    {
+        $rows = Db::get()->all(
+            self::SELECT . ' WHERE t.user_id = ? AND t.worked_on >= ? AND t.worked_on <= ?
+                          ORDER BY t.worked_on DESC, t.id DESC',
+            [$userId, $from->format('Y-m-d'), $to->format('Y-m-d')]
+        );
+
+        return array_map([TimeEntry::class, 'fromRow'], $rows);
+    }
+
+    /**
+     * How much this person has already logged on one day, for the daily cap.
+     * Excludes one entry when that entry is the one being edited.
+     */
+    public static function minutesForUserOnDay(
+        int $userId,
+        DateTimeImmutable $day,
+        ?int $excludeEntryId = null,
+    ): int {
+        $sql = 'SELECT COALESCE(SUM(minutes), 0) FROM time_entries
+                 WHERE user_id = ? AND worked_on = ?';
+        $params = [$userId, $day->format('Y-m-d')];
+
+        if ($excludeEntryId !== null) {
+            $sql .= ' AND id <> ?';
+            $params[] = $excludeEntryId;
+        }
+
+        return (int) Db::get()->value($sql, $params);
+    }
+
+    /**
+     * The administrator's filtered view.
+     *
+     * @return list<TimeEntry>
+     */
+    public static function search(TimeFilter $filter, int $limit = 1000): array
+    {
+        [$where, $params] = $filter->toSql();
+
+        $rows = Db::get()->all(
+            self::SELECT . $where . ' ORDER BY t.worked_on DESC, u.netid, t.id DESC
+                                      LIMIT ' . max(1, min(5000, $limit)),
+            $params
+        );
+
+        return array_map([TimeEntry::class, 'fromRow'], $rows);
+    }
+
+    /**
+     * @return array{entries: int, minutes: int}
+     */
+    public static function totals(TimeFilter $filter): array
+    {
+        [$where, $params] = $filter->toSql();
+
+        $row = Db::get()->one(
+            'SELECT COUNT(*) AS entries, COALESCE(SUM(t.minutes), 0) AS minutes
+               FROM time_entries t' . $where,
+            $params
+        );
+
+        return [
+            'entries' => (int) ($row['entries'] ?? 0),
+            'minutes' => (int) ($row['minutes'] ?? 0),
+        ];
+    }
+
+    /**
+     * Minutes per project over the filtered range, largest first.
+     *
+     * @return list<array{project: string, minutes: int}>
+     */
+    public static function totalsByProject(TimeFilter $filter): array
+    {
+        [$where, $params] = $filter->toSql();
+
+        $rows = Db::get()->all(
+            'SELECT p.name AS project, COALESCE(SUM(t.minutes), 0) AS minutes
+               FROM time_entries t
+               JOIN projects p ON p.id = t.project_id' . $where . '
+              GROUP BY p.id, p.name
+              ORDER BY minutes DESC, p.name',
+            $params
+        );
+
+        return array_map(
+            static fn (array $row): array => [
+                'project' => (string) $row['project'],
+                'minutes' => (int) $row['minutes'],
+            ],
+            $rows
+        );
+    }
+
+    public static function countForUser(int $userId): int
+    {
+        return (int) Db::get()->value('SELECT COUNT(*) FROM time_entries WHERE user_id = ?', [$userId]);
+    }
+}
