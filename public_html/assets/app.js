@@ -9,16 +9,22 @@
     'use strict';
 
     document.addEventListener('DOMContentLoaded', function () {
-        wireConfirmations();
+        wireConfirmations(document);
         wireAutoSubmit();
         wireDateEchoes();
         wireInviteLink();
+        wireDayPicker();
+        wireDaySheet();
         initCalendar();
     });
 
-    /* Any element with data-confirm asks before submitting. */
-    function wireConfirmations() {
-        document.querySelectorAll('[data-confirm]').forEach(function (el) {
+    /*
+     * Any element with data-confirm asks before submitting. Takes a root so
+     * markup swapped in later - the time registration month list - can be
+     * wired the same way.
+     */
+    function wireConfirmations(root) {
+        root.querySelectorAll('[data-confirm]').forEach(function (el) {
             var handler = function (event) {
                 if (!window.confirm(el.dataset.confirm)) {
                     event.preventDefault();
@@ -219,20 +225,6 @@
                 });
         }
 
-        function readJson(response) {
-            return response.json().then(function (body) {
-                if (!response.ok) {
-                    var message = body && body.error ? body.error : 'Request failed.';
-                    throw new Error(message);
-                }
-                return body;
-            }, function () {
-                throw new Error(response.status === 401
-                    ? 'Your session has expired. Please reload the page and sign in again.'
-                    : 'The server sent an unreadable response.');
-            });
-        }
-
         function post(url, payload) {
             return fetch(url, {
                 method: 'POST',
@@ -392,7 +384,200 @@
         }
     }
 
+    /*
+     * The printed day on the time sheet opens the browser's own date picker.
+     * The input itself is kept out of sight rather than removed, because
+     * showPicker() needs it rendered; where showPicker() does not exist the
+     * input simply stays visible, as it is without this script.
+     */
+    function wireDayPicker() {
+        var form = document.getElementById('day-nav');
+        var input = document.getElementById('day-input');
+        var button = document.getElementById('day-label');
+
+        if (!form || !input || !button || typeof input.showPicker !== 'function') {
+            return;
+        }
+
+        form.classList.add('has-picker');
+        button.hidden = false;
+
+        button.addEventListener('click', function () {
+            try {
+                input.showPicker();
+            } catch (err) {
+                /* Refused, e.g. inside a cross-origin frame: show the input. */
+                form.classList.remove('has-picker');
+                input.focus();
+            }
+        });
+    }
+
+    /*
+     * The time registration day sheet. Each row is one project on one day and
+     * saves itself when one of its cells is left after a change. The server
+     * decides everything - rules, daily cap, ownership - and this only reports
+     * what it said.
+     */
+    function wireDaySheet() {
+        var table = document.getElementById('day-sheet');
+        if (!table) {
+            return;
+        }
+
+        var status = document.getElementById('day-sheet-status');
+        var day = table.dataset.day;
+        var csrf = table.dataset.csrf;
+        var cellUrl = table.dataset.cellUrl;
+        var monthUrl = table.dataset.monthUrl;
+
+        table.querySelectorAll('tbody tr[data-project-id]').forEach(function (row) {
+            var hours = row.querySelector('.day-hours');
+            var note = row.querySelector('.day-note');
+
+            if (!hours || !note || hours.disabled) {
+                return;
+            }
+
+            /*
+             * One request per row at a time. A change made while one is in
+             * flight waits for it and is sent afterwards, so the server never
+             * sees an older value land after a newer one.
+             */
+            var busy = false;
+            var again = false;
+            var changed = hours;
+
+            function save() {
+                if (busy) {
+                    again = true;
+                    return;
+                }
+
+                if (hours.value.trim() === '' && note.value.trim() !== '') {
+                    markInvalid(hours, true);
+                    say('Add hours for this remark, or clear the remark too to remove the row.', true);
+                    return;
+                }
+
+                busy = true;
+                say('Saving…', false);
+
+                fetch(cellUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    /* Lets a save started by clicking an arrow outlive the page. */
+                    keepalive: true,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-Token': csrf
+                    },
+                    body: JSON.stringify({
+                        day: day,
+                        project_id: row.dataset.projectId,
+                        hours: hours.value,
+                        note: note.value
+                    })
+                })
+                    .then(readJson)
+                    .then(function (body) {
+                        /* Show what was stored ("3,5" becomes "3:30"), unless
+                           the cell has been changed again meanwhile. */
+                        if (!again) {
+                            hours.value = body.hours;
+                            note.value = body.note;
+                        }
+                        markInvalid(hours, false);
+                        markInvalid(note, false);
+                        say('Saved. ' + body.dayTotal + ' logged on this day.', false);
+                        refreshMonth();
+                    })
+                    .catch(function (err) {
+                        markInvalid(changed, true);
+                        say(err.message, true);
+                    })
+                    .finally(function () {
+                        busy = false;
+                        if (again) {
+                            again = false;
+                            save();
+                        }
+                    });
+            }
+
+            [hours, note].forEach(function (input) {
+                input.addEventListener('change', function () {
+                    changed = input;
+                    save();
+                });
+            });
+        });
+
+        function say(message, isError) {
+            status.textContent = message;
+            status.classList.toggle('is-error', isError);
+        }
+
+        function markInvalid(input, invalid) {
+            if (invalid) {
+                input.setAttribute('aria-invalid', 'true');
+            } else {
+                input.removeAttribute('aria-invalid');
+            }
+        }
+
+        /* Redraw the month list below so it agrees with what was saved. */
+        function refreshMonth() {
+            var section = document.getElementById('time-month');
+            if (!section) {
+                return;
+            }
+
+            var month = new URLSearchParams(window.location.search).get('month');
+            var url = monthUrl + '?day=' + encodeURIComponent(day) +
+                (month ? '&month=' + encodeURIComponent(month) : '');
+
+            fetch(url, { credentials: 'same-origin' })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('The month list could not be refreshed.');
+                    }
+                    return response.text();
+                })
+                .then(function (html) {
+                    var template = document.createElement('template');
+                    template.innerHTML = html;
+                    var fresh = template.content.getElementById('time-month');
+
+                    if (fresh) {
+                        wireConfirmations(fresh);
+                        document.getElementById('time-month').replaceWith(fresh);
+                    }
+                })
+                .catch(function () {
+                    /* Not worth interrupting anyone for: the save itself
+                       succeeded, and the list is right on the next load. */
+                });
+        }
+    }
+
     /* ---------------------------------------------------------- helpers */
+
+    /* A fetch response as JSON, or an Error carrying the server's message. */
+    function readJson(response) {
+        return response.json().then(function (body) {
+            if (!response.ok) {
+                var message = body && body.error ? body.error : 'Request failed.';
+                throw new Error(message);
+            }
+            return body;
+        }, function () {
+            throw new Error(response.status === 401
+                ? 'Your session has expired. Please reload the page and sign in again.'
+                : 'The server sent an unreadable response.');
+        });
+    }
 
     function minutes(count) {
         var hours = Math.floor(count / 60);

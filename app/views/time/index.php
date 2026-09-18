@@ -1,125 +1,125 @@
 <?php
 /**
- * An employee's own timesheet for one month.
+ * An employee's own timesheet: a day sheet on top, the month's list below.
  *
- * @var \Macrolab\User                                   $user
- * @var list<\Macrolab\Project>                          $projects
- * @var list<\Macrolab\TimeEntry>                        $entries
- * @var \DateTimeImmutable                               $month
- * @var string                                           $prevMonth
- * @var string                                           $nextMonth
- * @var int                                              $totalMinutes
- * @var list<array{project: string, minutes: int}>       $byProject
- * @var \Macrolab\TimeRuleSet                            $rules
- * @var \DateTimeImmutable                               $today
- * @var string|null                                      $error
+ * The day sheet has one row per project. Each row saves itself through
+ * /api/time/cell when a cell in it is left (see wireDaySheet() in app.js), so
+ * there is no submit button.
+ *
+ * @var \DateTimeImmutable                                              $day
+ * @var string                                                          $dayLabel   "Friday - 18/09/2026"
+ * @var string                                                          $prevDay
+ * @var string                                                          $nextDay
+ * @var bool                                                            $isWeekend
+ * @var bool                                                            $isOpen     inside the logging window
+ * @var list<array{project: \Macrolab\Project, entry: \Macrolab\TimeEntry|null}> $rows
+ * @var \Macrolab\TimeRuleSet                                           $rules
+ * @var array<string, mixed>                                            $month      see TimeController::monthData()
  */
 
 use Macrolab\Csrf;
 use Macrolab\TimeRules;
-
-$maxDate = $today->modify('+' . $rules->maxFutureDays . ' days')->format('Y-m-d');
-$minDate = $today->modify('-' . $rules->maxBackdateDays . ' days')->format('Y-m-d');
+use Macrolab\View;
 ?>
 <section class="card">
     <h1>Time registration</h1>
 
-    <?php if ($error !== null): ?>
-        <p class="alert" role="alert"><?= e($error) ?></p>
-    <?php endif; ?>
-
-    <?php if ($projects === []): ?>
+    <?php if ($rows === []): ?>
         <p class="muted">
             There are no projects to log time against yet. Ask the
             administrator to add one.
         </p>
     <?php else: ?>
-        <h2>Log some time</h2>
+        <form method="get" action="<?= e(path('/time')) ?>" class="day-nav" id="day-nav">
+            <a class="day-step" href="<?= e(path('/time?day=' . $prevDay)) ?>"
+               aria-label="Previous day" title="Previous day">&larr;</a>
 
-        <form method="post" action="<?= e(path('/time')) ?>" class="row">
-            <?= Csrf::field() ?>
+            <span class="day-pick">
+                <button type="button" class="day-label" id="day-label" hidden
+                        aria-label="<?= e($dayLabel) ?> - choose another day"><?= e($dayLabel) ?></button>
+                <span class="day-label day-label-static"><?= e($dayLabel) ?></span>
+                <input id="day-input" name="day" type="date" data-auto-submit
+                       value="<?= e($day->format('Y-m-d')) ?>" aria-label="Choose a day">
+            </span>
 
-            <label for="worked_on">Day</label>
-            <input id="worked_on" name="worked_on" type="date" required data-echo
-                   value="<?= e($today->format('Y-m-d')) ?>"
-                   min="<?= e($minDate) ?>" max="<?= e($maxDate) ?>">
+            <a class="day-step" href="<?= e(path('/time?day=' . $nextDay)) ?>"
+               aria-label="Next day" title="Next day">&rarr;</a>
 
-            <label for="project_id">Project</label>
-            <select id="project_id" name="project_id" required>
-                <?php foreach ($projects as $project): ?>
-                    <option value="<?= e($project->id) ?>"><?= e($project->label()) ?></option>
-                <?php endforeach; ?>
-            </select>
-
-            <label for="hours">Hours</label>
-            <input id="hours" name="hours" type="text" required inputmode="decimal"
-                   placeholder="3.5" aria-describedby="hours-help">
-
-            <label for="note">Note <span class="muted">(optional)</span></label>
-            <input id="note" name="note" type="text" maxlength="<?= e(TimeRules::NOTE_MAX) ?>"
-                   placeholder="what you worked on">
-
-            <button type="submit" class="primary">Log it</button>
+            <noscript><button type="submit">Go</button></noscript>
         </form>
 
+        <?php if (!$isOpen): ?>
+            <p class="muted small">
+                This day is outside the period you can log time for, which runs
+                from <?= e($rules->maxBackdateDays) ?> days back to
+                <?= e($rules->maxFutureDays) ?> days ahead. Ask the administrator
+                if something here needs correcting.
+            </p>
+        <?php endif; ?>
+
+        <div class="day-sheet-wrap">
+        <table class="day-sheet<?= $isWeekend ? ' is-weekend' : '' ?>" id="day-sheet"
+               data-day="<?= e($day->format('Y-m-d')) ?>"
+               data-csrf="<?= e(Csrf::token()) ?>"
+               data-cell-url="<?= e(path('/api/time/cell')) ?>"
+               data-month-url="<?= e(path('/api/time/month')) ?>">
+            <thead>
+            <tr>
+                <th>Project</th>
+                <th>Code</th>
+                <th class="num">Hours</th>
+                <th>Remarks</th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($rows as $row):
+                $project = $row['project'];
+                $entry = $row['entry'];
+                $locked = !$isOpen || !$project->isActive;
+                ?>
+                <tr data-project-id="<?= e($project->id) ?>">
+                    <td>
+                        <?= e($project->name) ?>
+                        <?php if (!$project->isActive): ?>
+                            <span class="muted small">(retired)</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= $project->code === null ? '<span class="muted">&mdash;</span>' : e($project->code) ?></td>
+                    <td class="num">
+                        <input type="text" class="day-hours" inputmode="decimal" autocomplete="off"
+                               value="<?= e($entry === null ? '' : $entry->hoursLabel()) ?>"
+                               aria-label="Hours on <?= e($project->name) ?>"
+                               aria-describedby="hours-help"
+                               <?= $locked ? 'disabled' : '' ?>>
+                    </td>
+                    <td>
+                        <input type="text" class="day-note" maxlength="<?= e(TimeRules::NOTE_MAX) ?>" autocomplete="off"
+                               value="<?= e($entry?->note ?? '') ?>"
+                               aria-label="Remarks on <?= e($project->name) ?>"
+                               <?= $locked ? 'disabled' : '' ?>>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+
+        <p class="day-status small" id="day-sheet-status" role="status" aria-live="polite"></p>
+
+        <noscript>
+            <p class="alert">Saving hours needs JavaScript, which is switched off in this browser.</p>
+        </noscript>
+
         <p class="muted small" id="hours-help">
-            Hours can be written as <code>3.5</code>, <code>3,5</code>,
-            <code>3:30</code> or <code>3h30</code>. The longest single entry is
-            <?= e(TimeRules::formatHours($rules->maxMinutesPerEntry)) ?>, and the
-            most you can log on one day is
+            Each row saves itself when you leave it. Hours can be written as
+            <code>3.5</code>, <code>3,5</code>, <code>3:30</code> or
+            <code>3h30</code>; clear the hours to remove them. The most you can
+            log on one project in a day is
+            <?= e(TimeRules::formatHours($rules->maxMinutesPerEntry)) ?>, and
+            on one day altogether
             <?= e(TimeRules::formatHours($rules->maxMinutesPerDay)) ?>.
         </p>
     <?php endif; ?>
 </section>
 
-<section class="card">
-    <h2><?= e($month->format('F Y')) ?></h2>
-
-    <p class="pager">
-        <a href="<?= e(path('/time?month=' . $prevMonth)) ?>">&larr; <?= e($prevMonth) ?></a>
-        <a href="<?= e(path('/time?month=' . $nextMonth)) ?>"><?= e($nextMonth) ?> &rarr;</a>
-    </p>
-
-    <?php if ($entries === []): ?>
-        <p class="muted">Nothing logged this month.</p>
-    <?php else: ?>
-        <table class="wide">
-            <thead>
-            <tr><th>Day</th><th>Project</th><th class="num">Hours</th><th>Note</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-            <?php foreach ($entries as $entry): ?>
-                <tr>
-                    <td><?= e($entry->workedOnLabel()) ?></td>
-                    <td><?= e($entry->projectLabel()) ?></td>
-                    <td class="num"><?= e($entry->hoursLabel()) ?></td>
-                    <td><?= $entry->note === null ? '<span class="muted">-</span>' : e($entry->note) ?></td>
-                    <td class="actions">
-                        <a href="<?= e(path('/time/' . $entry->id)) ?>">Change</a>
-                        <form method="post" action="<?= e(path('/time/' . $entry->id . '/delete')) ?>" class="inline"
-                              data-confirm="Remove the <?= e($entry->hoursLabel()) ?> logged on <?= e($entry->workedOnLabel()) ?>?">
-                            <?= Csrf::field() ?>
-                            <button type="submit" class="link danger">Remove</button>
-                        </form>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-            <tfoot>
-            <tr>
-                <th colspan="2">Total</th>
-                <th class="num"><?= e(TimeRules::formatHours($totalMinutes)) ?></th>
-                <th colspan="2"></th>
-            </tr>
-            </tfoot>
-        </table>
-
-        <h3>By project</h3>
-        <dl class="facts">
-            <?php foreach ($byProject as $row): ?>
-                <dt><?= e($row['project']) ?></dt>
-                <dd><?= e(TimeRules::formatHours($row['minutes'])) ?></dd>
-            <?php endforeach; ?>
-        </dl>
-    <?php endif; ?>
-</section>
+<?= View::render('time/month', $month) ?>

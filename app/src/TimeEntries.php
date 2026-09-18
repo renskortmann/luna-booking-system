@@ -42,6 +42,41 @@ final class TimeEntries
     }
 
     /**
+     * One person's entries on one day, keyed by project id. The day sheet.
+     *
+     * The unique key on (user_id, worked_on, project_id) is what makes keying
+     * by project safe: there is never a second entry to overwrite.
+     *
+     * @return array<int, TimeEntry>
+     */
+    public static function forUserOnDay(int $userId, DateTimeImmutable $day): array
+    {
+        $rows = Db::get()->all(
+            self::SELECT . ' WHERE t.user_id = ? AND t.worked_on = ?',
+            [$userId, $day->format('Y-m-d')]
+        );
+
+        $entries = [];
+        foreach ($rows as $row) {
+            $entry = TimeEntry::fromRow($row);
+            $entries[$entry->projectId] = $entry;
+        }
+
+        return $entries;
+    }
+
+    /** The one entry a day-sheet cell stands for, if it has been filled in. */
+    public static function findForUserProjectDay(int $userId, int $projectId, DateTimeImmutable $day): ?TimeEntry
+    {
+        $row = Db::get()->one(
+            self::SELECT . ' WHERE t.user_id = ? AND t.project_id = ? AND t.worked_on = ?',
+            [$userId, $projectId, $day->format('Y-m-d')]
+        );
+
+        return $row === null ? null : TimeEntry::fromRow($row);
+    }
+
+    /**
      * How much this person has already logged on one day, for the daily cap.
      * Excludes one entry when that entry is the one being edited.
      */

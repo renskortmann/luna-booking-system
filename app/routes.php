@@ -14,6 +14,7 @@ use Macrolab\Controller\AuthController;
 use Macrolab\Controller\BookingApiController;
 use Macrolab\Controller\CalendarController;
 use Macrolab\Controller\HubController;
+use Macrolab\Controller\TimeApiController;
 use Macrolab\Controller\TimeController;
 use Macrolab\Router;
 
@@ -35,9 +36,14 @@ $router->post('/api/bookings/{id}/cancel', [BookingApiController::class, 'cancel
 
 // ---------------------------------------------------------- time registration
 // Unrelated to the booking system above; the two share only the sign-in.
-$router->form('/time', [TimeController::class, 'show']);
+$router->get('/time', [TimeController::class, 'show']);
 $router->form('/time/{id}', [TimeController::class, 'edit']);
 $router->post('/time/{id}/delete', [TimeController::class, 'delete']);
+
+// The day sheet saves each cell as it is left. Under /api so the {id} route
+// above never sees these, and so errors come back as JSON.
+$router->post('/api/time/cell', [TimeApiController::class, 'saveCell']);
+$router->get('/api/time/month', [TimeApiController::class, 'month']);
 
 // --------------------------------------------------------------------- access
 $router->form('/login', [AuthController::class, 'login']);

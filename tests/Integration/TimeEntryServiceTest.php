@@ -94,13 +94,185 @@ final class TimeEntryServiceTest extends DatabaseTestCase
     public function testTheDailyCapBlocksTheEntryThatWouldExceedIt(): void
     {
         // The default caps are 12 hours per entry and 16 across a day, so the
-        // day has to be built up from entries that are each legal on their own.
+        // day has to be built up from entries that are each legal on their own,
+        // and each on its own project, since a project has one entry a day.
         $this->log($this->alice, '2026-09-17', 720);
         $this->log($this->alice, '2026-09-17', 180, $this->other);
 
         // 15h logged, and another 2h would pass 16h.
         $this->expectException(TimeEntryException::class);
+        $this->expectExceptionMessage('the limit is');
+        $this->log($this->alice, '2026-09-17', 120, Projects::create('Detector calibration'));
+    }
+
+    public function testASecondEntryForTheSameProjectAndDayIsRefused(): void
+    {
         $this->log($this->alice, '2026-09-17', 120);
+
+        $this->expectException(TimeEntryException::class);
+        $this->expectExceptionMessage('You already have time on Beam alignment');
+        $this->log($this->alice, '2026-09-17', 60);
+    }
+
+    public function testAnEntryCannotBeMovedOntoAProjectAndDayThatIsTaken(): void
+    {
+        $this->log($this->alice, '2026-09-17', 120);
+        $moving = $this->log($this->alice, '2026-09-17', 60, $this->other);
+
+        $this->expectException(TimeEntryException::class);
+        $this->expectExceptionMessage('You already have time on Beam alignment');
+
+        TimeEntryService::update(
+            actor: Actor::forUser($this->alice),
+            entry: $moving,
+            projectId: $this->project->id,
+            workedOn: $this->day('2026-09-17'),
+            minutes: 60,
+            note: null,
+        );
+    }
+
+    /** The same project on the same day is taken for Alice, not for Bob. */
+    public function testTheSameProjectAndDayIsFreeForSomebodyElse(): void
+    {
+        $this->log($this->alice, '2026-09-17', 120);
+        $entry = $this->log($this->bob, '2026-09-17', 120);
+
+        self::assertSame($this->bob->id, $entry->userId);
+    }
+
+    public function testTheUniqueKeyHoldsEvenWhenTheFriendlyCheckIsBypassed(): void
+    {
+        $this->log($this->alice, '2026-09-17', 120);
+
+        $this->expectException(\PDOException::class);
+        Db::get()->insert('time_entries', [
+            'user_id'    => $this->alice->id,
+            'project_id' => $this->project->id,
+            'worked_on'  => '2026-09-17',
+            'minutes'    => 60,
+            'note'       => null,
+            'created_at' => Clock::sql(),
+            'updated_at' => Clock::sql(),
+        ]);
+    }
+
+    public function testFillingAnEmptyCellCreatesTheEntry(): void
+    {
+        $entry = $this->cell($this->alice, 210, 'stage alignment');
+
+        self::assertNotNull($entry);
+        self::assertSame(210, $entry->minutes);
+        self::assertSame('stage alignment', $entry->note);
+        self::assertSame(1, $this->countEntries($this->alice));
+    }
+
+    public function testChangingAFilledCellUpdatesTheSameEntry(): void
+    {
+        $first = $this->cell($this->alice, 120);
+        $second = $this->cell($this->alice, 180, 'longer than planned');
+
+        self::assertNotNull($first);
+        self::assertNotNull($second);
+        self::assertSame($first->id, $second->id);
+        self::assertSame(180, $second->minutes);
+        self::assertSame(1, $this->countEntries($this->alice));
+    }
+
+    public function testClearingACellRemovesTheEntry(): void
+    {
+        $this->cell($this->alice, 120, 'a remark');
+
+        self::assertNull($this->cell($this->alice, null));
+        self::assertSame(0, $this->countEntries($this->alice));
+    }
+
+    public function testZeroHoursInACellRemovesTheEntry(): void
+    {
+        $this->cell($this->alice, 120);
+
+        self::assertNull($this->cell($this->alice, 0));
+        self::assertSame(0, $this->countEntries($this->alice));
+    }
+
+    public function testClearingACellThatWasNeverFilledDoesNothing(): void
+    {
+        self::assertNull($this->cell($this->alice, null));
+        self::assertSame(0, (int) Db::get()->value('SELECT COUNT(*) FROM audit_log WHERE action LIKE ?', ['time_entry_%']));
+    }
+
+    public function testARemarkWithoutHoursIsRefused(): void
+    {
+        $this->expectException(TimeEntryException::class);
+        $this->expectExceptionMessage('Enter the hours for this remark.');
+        $this->cell($this->alice, null, 'forgot the hours');
+    }
+
+    /** Leaving a cell without changing it must not claim a change was made. */
+    public function testSavingACellUnchangedLeavesNoAuditEntry(): void
+    {
+        $this->cell($this->alice, 120, 'same');
+        $this->cell($this->alice, 120, 'same');
+
+        self::assertSame(0, (int) Db::get()->value(
+            'SELECT COUNT(*) FROM audit_log WHERE action = ?',
+            ['time_entry_updated']
+        ));
+    }
+
+    /**
+     * Raising one project's hours is measured against the other projects on
+     * that day, not against the cell's own previous value as well.
+     */
+    public function testTheDailyCapCountsOtherCellsButNotTheCellsOwnOldValue(): void
+    {
+        $this->cell($this->alice, 600, project: $this->other);   // 10h elsewhere
+        $this->cell($this->alice, 300);                          // 5h here: 15h
+
+        // 6h here makes 16h exactly, which is allowed; the old 5h is replaced.
+        $entry = $this->cell($this->alice, 360);
+        self::assertNotNull($entry);
+        self::assertSame(360, $entry->minutes);
+
+        // 7h here would make 17h.
+        $this->expectException(TimeEntryException::class);
+        $this->cell($this->alice, 420);
+    }
+
+    public function testACellOnARetiredProjectCannotBeSaved(): void
+    {
+        $this->cell($this->alice, 120);
+        Projects::setActive($this->project->id, false);
+
+        $this->expectException(HttpException::class);
+        $this->cell($this->alice, null);
+    }
+
+    public function testTheAdministratorHasNoDaySheet(): void
+    {
+        $this->expectException(HttpException::class);
+
+        TimeEntryService::saveCell(
+            actor: Actor::forAdmin(),
+            day: $this->day('2026-09-17'),
+            projectId: $this->project->id,
+            minutes: 60,
+        );
+    }
+
+    public function testTheDaySheetListsOneEntryPerProject(): void
+    {
+        $this->cell($this->alice, 120);
+        $this->cell($this->alice, 60, project: $this->other);
+        $this->log($this->alice, '2026-09-16', 30);
+        $this->log($this->bob, '2026-09-17', 45);
+
+        $entries = TimeEntries::forUserOnDay($this->alice->id, $this->day('2026-09-17'));
+
+        // Neither the other day nor Bob's time on this one.
+        self::assertCount(2, $entries);
+        self::assertSame(120, $entries[$this->project->id]->minutes);
+        self::assertSame(60, $entries[$this->other->id]->minutes);
     }
 
     public function testTheDailyCapIsPerPersonNotPerLab(): void
@@ -295,6 +467,27 @@ final class TimeEntryServiceTest extends DatabaseTestCase
             minutes: $minutes,
             note: $note,
         );
+    }
+
+    /** Save one day-sheet cell on 17 September, as the grid does. */
+    private function cell(
+        User $user,
+        ?int $minutes,
+        ?string $note = null,
+        ?Project $project = null,
+    ): ?TimeEntry {
+        return TimeEntryService::saveCell(
+            actor: Actor::forUser($user),
+            day: $this->day('2026-09-17'),
+            projectId: ($project ?? $this->project)->id,
+            minutes: $minutes,
+            note: $note,
+        );
+    }
+
+    private function countEntries(User $user): int
+    {
+        return (int) Db::get()->value('SELECT COUNT(*) FROM time_entries WHERE user_id = ?', [$user->id]);
     }
 
     private function day(string $day): DateTimeImmutable

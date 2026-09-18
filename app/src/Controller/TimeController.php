@@ -10,6 +10,7 @@ use Macrolab\Csrf;
 use Macrolab\Http\HttpException;
 use Macrolab\Http\Request;
 use Macrolab\Http\Response;
+use Macrolab\Project;
 use Macrolab\Projects;
 use Macrolab\Session;
 use Macrolab\TimeEntries;
@@ -22,10 +23,12 @@ use Macrolab\TimeRules;
 use Macrolab\View;
 
 /**
- * An employee's own timesheet: the hours they worked, one month at a time.
+ * An employee's own timesheet.
  *
- * Plain forms, no JSON API. Nothing here needs to be live, so nothing here
- * needs JavaScript beyond the confirm-before-submit the whole site already has.
+ * The top of the page is a day sheet: one row per project for a single day,
+ * each cell saved on its own through TimeApiController as it is left. The
+ * bottom is the month's entries as a list, with the edit page and the remove
+ * button behind each one.
  */
 final class TimeController
 {
@@ -44,42 +47,70 @@ final class TimeController
         }
 
         $user = Auth::requireUser();
-        $error = null;
-
-        if ($request->isPost()) {
-            Csrf::verify($request);
-
-            try {
-                $this->add($request);
-
-                return Response::redirect('/time?month=' . $this->monthOf($request));
-            } catch (TimeEntryException $e) {
-                $error = implode(' ', $e->errors);
-            } catch (\RuntimeException $e) {
-                $error = $e->getMessage();
-            }
-        }
-
-        $month = $this->month($request);
-        $from = $month;
-        $to = $month->modify('last day of this month');
-
-        $entries = TimeEntries::forUser($user->id, $from, $to);
+        $rules = TimeRuleSet::fromSettings();
+        $today = TimeRules::today();
+        $day = self::day($request) ?? $today;
+        $rows = $this->rows($user->id, $day);
 
         return View::page('time/index', [
             'title'      => 'Time registration',
-            'user'       => $user,
-            'projects'   => Projects::allActive(),
-            'entries'    => $entries,
-            'month'      => $month,
-            'prevMonth'  => $month->modify('-1 month')->format('Y-m'),
-            'nextMonth'  => $month->modify('+1 month')->format('Y-m'),
+            'day'        => $day,
+            // A calendar day, so ->format() and never Clock::local(): see TimeEntry.
+            'dayLabel'   => $day->format('l - d/m/Y'),
+            'prevDay'    => $day->modify('-1 day')->format('Y-m-d'),
+            'nextDay'    => $day->modify('+1 day')->format('Y-m-d'),
+            'isWeekend'  => (int) $day->format('N') >= 6,
+            'isOpen'     => TimeRules::isOpenForLogging($rules, $day, $today),
+            'rows'       => $rows,
+            'rules'      => $rules,
+            'month'      => self::monthData($user->id, self::month($request, $day), $day),
+        ]);
+    }
+
+    /**
+     * What the month list at the bottom of the page needs. Shared with the
+     * endpoint that re-renders that list after a cell is saved.
+     *
+     * @return array<string, mixed>
+     */
+    public static function monthData(int $userId, DateTimeImmutable $month, DateTimeImmutable $day): array
+    {
+        $entries = TimeEntries::forUser($userId, $month, $month->modify('last day of this month'));
+
+        return [
+            'entries'      => $entries,
+            'month'        => $month,
+            'day'          => $day->format('Y-m-d'),
+            'prevMonth'    => $month->modify('-1 month')->format('Y-m'),
+            'nextMonth'    => $month->modify('+1 month')->format('Y-m'),
             'totalMinutes' => array_sum(array_map(static fn (TimeEntry $e): int => $e->minutes, $entries)),
-            'byProject'  => $this->byProject($entries),
-            'rules'      => TimeRuleSet::fromSettings(),
-            'today'      => TimeRules::today(),
-            'error'      => $error,
-        ], $error !== null ? 400 : 200);
+            'byProject'    => self::byProject($entries),
+        ];
+    }
+
+    /** The day asked for in ?day=, or null when it is missing or malformed. */
+    public static function day(Request $request): ?DateTimeImmutable
+    {
+        return TimeRules::parseDate($request->query('day', '') ?? '');
+    }
+
+    /**
+     * The month to list, as its first day: ?month= when the list has been
+     * paged on its own, otherwise the month of the day on the sheet.
+     */
+    public static function month(Request $request, DateTimeImmutable $day): DateTimeImmutable
+    {
+        $month = (string) ($request->query('month', '') ?? '');
+
+        if (preg_match('/^\d{4}-\d{2}$/', $month) === 1) {
+            $parsed = TimeRules::parseDate($month . '-01');
+
+            if ($parsed !== null) {
+                return $parsed;
+            }
+        }
+
+        return $day->modify('first day of this month');
     }
 
     public function edit(Request $request, string $id): Response
@@ -96,7 +127,7 @@ final class TimeController
             Csrf::verify($request);
 
             try {
-                TimeEntryService::update(
+                $updated = TimeEntryService::update(
                     actor: $actor,
                     entry: $entry,
                     projectId: (int) ($request->post('project_id', '0') ?? '0'),
@@ -107,7 +138,8 @@ final class TimeController
 
                 Session::flash('success', 'Your time entry has been changed.');
 
-                return Response::redirect('/time?month=' . $entry->workedOn->format('Y-m'));
+                // To the day it now sits on, which may not be the one it left.
+                return Response::redirect('/time?day=' . $updated->workedOnDate());
             } catch (TimeEntryException $e) {
                 $error = implode(' ', $e->errors);
             } catch (\RuntimeException $e) {
@@ -134,22 +166,7 @@ final class TimeController
         TimeEntryService::delete($actor, $entry);
         Session::flash('success', 'That time entry has been removed.');
 
-        return Response::redirect('/time?month=' . $entry->workedOn->format('Y-m'));
-    }
-
-    private function add(Request $request): void
-    {
-        $actor = Auth::requireActor();
-
-        TimeEntryService::create(
-            actor: $actor,
-            projectId: (int) ($request->post('project_id', '0') ?? '0'),
-            workedOn: $this->workedOn($request),
-            minutes: $this->minutes($request),
-            note: $request->post('note'),
-        );
-
-        Session::flash('success', 'Your time has been logged.');
+        return Response::redirect('/time?day=' . $entry->workedOnDate());
     }
 
     /** @throws TimeEntryException when the field is missing or malformed */
@@ -193,30 +210,40 @@ final class TimeController
         return $entry;
     }
 
-    /** The month being viewed, as its first day at UTC midnight. */
-    private function month(Request $request): DateTimeImmutable
+    /**
+     * One row per project for the day sheet: every active project, plus any
+     * retired one that already has time on this day. Leaving those out would
+     * make the day look shorter than it is; they are shown read-only.
+     *
+     * @return list<array{project: Project, entry: TimeEntry|null}>
+     */
+    private function rows(int $userId, DateTimeImmutable $day): array
     {
-        $month = TimeRules::parseDate($this->monthOf($request) . '-01');
+        $entries = TimeEntries::forUserOnDay($userId, $day);
+        $rows = [];
 
-        return $month ?? TimeRules::today()->modify('first day of this month');
-    }
-
-    private function monthOf(Request $request): string
-    {
-        $month = (string) ($request->query('month', '') ?? '');
-
-        if (preg_match('/^\d{4}-\d{2}$/', $month) === 1) {
-            return $month;
+        foreach (Projects::allActive() as $project) {
+            $rows[] = ['project' => $project, 'entry' => $entries[$project->id] ?? null];
+            unset($entries[$project->id]);
         }
 
-        return TimeRules::today()->format('Y-m');
+        // Whatever is left belongs to a project that has since been retired.
+        foreach ($entries as $projectId => $entry) {
+            $project = Projects::find($projectId);
+
+            if ($project !== null) {
+                $rows[] = ['project' => $project, 'entry' => $entry];
+            }
+        }
+
+        return $rows;
     }
 
     /**
      * @param list<TimeEntry> $entries
      * @return list<array{project: string, minutes: int}>
      */
-    private function byProject(array $entries): array
+    private static function byProject(array $entries): array
     {
         $totals = [];
 

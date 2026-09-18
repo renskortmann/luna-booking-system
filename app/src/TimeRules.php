@@ -41,9 +41,10 @@ final class TimeRules
         } elseif ($minutes < $rules->minMinutes) {
             $errors[] = 'The shortest entry is ' . BookingRules::humanDuration($rules->minMinutes) . '.';
         } elseif ($minutes > $rules->maxMinutesPerEntry) {
-            $errors[] = 'One entry cannot be longer than '
-                . BookingRules::humanDuration($rules->maxMinutesPerEntry)
-                . '. Split it across entries if you really worked that long.';
+            // One entry is one project's time for one day, so this is a
+            // per-project daily limit; splitting the time is not an option.
+            $errors[] = 'No more than ' . BookingRules::humanDuration($rules->maxMinutesPerEntry)
+                . ' can be logged on one project in a day.';
         }
 
         // Only worth checking when this entry is itself sane.
@@ -75,6 +76,18 @@ final class TimeRules
         }
 
         return $errors;
+    }
+
+    /**
+     * Whether time may be logged for this day at all: the same window
+     * validate() enforces, asked up front so the day sheet can show a day
+     * outside it read-only instead of refusing every cell.
+     */
+    public static function isOpenForLogging(TimeRuleSet $rules, DateTimeImmutable $day, DateTimeImmutable $today): bool
+    {
+        $daysAhead = self::wholeDaysBetween($today, $day);
+
+        return $daysAhead <= $rules->maxFutureDays && -$daysAhead <= $rules->maxBackdateDays;
     }
 
     /**

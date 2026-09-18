@@ -158,6 +158,27 @@ final class TimeRulesTest extends TestCase
         self::assertStringContainsString('days back', $errors[0]);
     }
 
+    /**
+     * The day sheet asks this up front to decide whether a day is editable,
+     * so it has to agree with validate() at both edges of the window.
+     */
+    public function testTheLoggingWindowIncludesBothOfItsEdges(): void
+    {
+        $rules = new TimeRuleSet(maxFutureDays: 7, maxBackdateDays: 90);
+        $today = new DateTimeImmutable('2026-09-17', new DateTimeZone('UTC'));
+        $open = static fn (string $day): bool => TimeRules::isOpenForLogging(
+            $rules,
+            new DateTimeImmutable($day, new DateTimeZone('UTC')),
+            $today,
+        );
+
+        self::assertTrue($open('2026-09-17'));
+        self::assertTrue($open('2026-09-24'));   // 7 days ahead
+        self::assertFalse($open('2026-09-25'));  // 8 days ahead
+        self::assertTrue($open('2026-06-19'));   // 90 days back
+        self::assertFalse($open('2026-06-18'));  // 91 days back
+    }
+
     public function testAnOverLongNoteIsRefusedRatherThanTruncated(): void
     {
         $errors = $this->validate(note: str_repeat('x', TimeRules::NOTE_MAX + 1));
