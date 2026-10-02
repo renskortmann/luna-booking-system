@@ -5,14 +5,19 @@ manual (architecture, deployment runbook, operations); read it before changing
 behaviour. This file records what README.md does not: the live deployment state
 and how deployment has been done in practice.
 
+**This file is committed to a public GitHub repo.** Keep account names, IPs,
+database names/users, filesystem paths, passwords, keys and tokens out of it.
+Put machine-specific private details in `CLAUDE.local.md` (gitignored) or the
+user's password manager.
+
 ## Project in one paragraph
 
 PHP 8.2+ / MySQL app for the TU Delft Macrolab: instrument booking at
 `/booking` and time registration at `/time`, behind one sign-in, with a hub at
 `/`. No framework; PSR-4 `Macrolab\` -> `app/src/`, routes in `app/routes.php`,
 plain PHP views in `app/views/`, migrations in `app/migrations/`. Only
-`public_html/index.php` is web-reachable. Composer deps are vendored at deploy
-time because the server has no shell.
+`public_html/index.php` is web-reachable. Composer deps must be installed
+without a shell on the server (see "Getting vendor/ onto the server").
 
 - Tests: `composer install && vendor/bin/phpunit` (integration suite is skipped
   unless `MACROLAB_TEST_DB_NAME` is set, see `tests/test-config.php`).
@@ -25,94 +30,146 @@ time because the server has no shell.
 | | |
 |---|---|
 | Domain | `macrolab.citg.tudelft.nl` |
-| Server | TU Delft shared LAMP hosting, `lamp8.tudelft.nl`, IP `131.180.77.135` |
+| Server | TU Delft shared LAMP hosting (Plesk) |
 | Panel | Plesk, reachable only from campus network or eduVPN |
-| Plesk login | `rkortmann` (subscription owner: Rens Kortmann) |
-| PHP | 8.2.34 selected in Plesk |
-| Document root | `httpdocs/` (Plesk default; leave as is) |
-| Access | Plesk web UI (File Manager, Databases, SSL, Scheduled Tasks) and FTP(S). No SSH/SFTP, no Composer on the server, no outbound mail |
+| PHP | 8.2.34, run as "FPM application served by Apache" (so `.htaccess` works) |
+| Document root | `public_html` (changed from Plesk's default `httpdocs` in Hosting Settings) |
+| Access | Plesk web UI (File Manager, Databases, SSL, Scheduled Tasks, Git). FTP(S). Plesk has an "SSH access" link, but the README assumes no shell; unverified. No outbound mail |
 
-Target layout on the server (index.php detects it automatically):
+## Deployment strategy: Plesk Git, no zip
+
+Decision (2026-10-02): deploy from GitHub with Plesk's Git extension, because
+many small changes are expected. The zip bundle approach was abandoned and the
+earlier `~/macrolab-deploy.zip` must not be used (it has the old `httpdocs/`
+layout and its install token was shown in a chat, so treat it as burnt).
+
+Layout on the server, with the repo deployed to the subscription root `/`:
 
 ```
 / (subscription root)
-    httpdocs/   <- contents of public_html/ (index.php, .htaccess, assets/)
-    app/        <- beside httpdocs, not web-reachable
-    vendor/     <- built locally with --no-dev
+    public_html/   <- document root: index.php, .htaccess, assets/ (from the repo)
+    app/           <- from the repo; beside the document root, not web-reachable
+    vendor/        <- NOT in git; see below
+    app/config.php <- NOT in git; created once on the server
+    tests/ docs/ composer.json ...  (harmless, outside the document root)
 ```
 
-## Deployment status (as of 2026-10-01)
+`public_html/index.php` detects `app/` one level above itself, so nothing
+needs configuring. The old `httpdocs/` folder is unused and can be deleted
+once everything works.
+
+Plesk -> Git -> Create repository settings:
+- **Remote repository**, URL = the GitHub repo. If it is private, Plesk shows an
+  SSH public key after creation: add it as a read-only **deploy key** in GitHub
+  and use the SSH URL.
+- Repository name: anything unique (Plesk suggests `macrolab.git`).
+- **Deployment mode: Manual.** Automatic needs GitHub to call a webhook on the
+  Plesk server, which is campus-only and unreachable from GitHub. Click "Pull
+  updates" in Plesk (on campus/eduVPN) to deploy.
+- **Deployment directory: `/`** (not `/httpdocs`).
+- Leave "post deployment actions" off: the README says the hosting does not
+  allow shell commands.
+
+The repo was renamed from `luna-booking-system` to `macrolab-website` (planned
+2026-10-02, check `git remote -v`); GitHub redirects the old name but never
+create a new repo with the old name. Enter the final URL in Plesk.
+
+### Getting vendor/ onto the server: Plesk PHP Composer (works, 2026-10-02)
+
+`vendor/` is gitignored and there is no shell, so Plesk's PHP Composer
+extension builds it on the server (domain dashboard -> PHP Composer). Verified
+on the first deployment:
+- It found `composer.json` in the subscription root ("Folder: /").
+- **Mode: Production** installs without dev dependencies (no phpunit).
+- **Install** (not Update) used the versions from `composer.lock` and created
+  `vendor/` beside `app/`, with `autoload.php` and only the production packages.
+
+After a pull that changes `composer.lock`, run Install again. Never click
+Update on the server: it ignores `composer.lock`. Change dependencies locally
+with `composer update`, commit the lock file, then pull and Install.
+
+Fallback if the extension ever stops working: a `deploy` branch containing
+`vendor/` (`composer install --no-dev --optimize-autoloader`, `git add -f
+vendor`, deploy that branch).
+
+### app/config.php (created once on the server)
+
+Not in git, and deployment does not delete untracked files (assumption: verify
+after the first pull that `config.php` survived). Create it in Plesk File
+Manager by copying `app/config.example.php` to `app/config.php`, then set:
+- `app.base_url` = `https://macrolab.citg.tudelft.nl`
+- `app.key` and `app.install_token`: run `php app/cli/generate-key.php` locally
+  twice and paste the outputs. Never reuse values that appeared in chat.
+- `db`: host `localhost`, port `3306`; database name, user and password are in
+  the user's password manager (see "Database" below).
+- permissions 600.
+
+### PHP environment (verified from phpinfo, 2026-10-02)
+
+phpinfo from Plesk (`docs/PHP 8.2.34 - phpinfo().pdf`, gitignored) was taken
+first while PHP ran as "FPM served by nginx", then again after switching to
+"FPM application served by Apache". The second shows `SERVER_SOFTWARE =
+Apache` (nginx proxies in front), the same PHP version, ini files and
+`open_basedir`, and `HTTPS = on`, so `.htaccess` should now be honoured:
+
+- PHP 8.2.34, FPM, memory_limit 256M, upload/post 16M, max_execution_time 60.
+- All required extensions are loaded: `pdo_mysql`, `mbstring`, `openssl`
+  (1.1.1k), `dom`/`xml`/`libxml`, `json`, and `sodium` (libsodium 1.0.18, so
+  Argon2id and sodium-based encryption are available). `zip` is also loaded.
+- `open_basedir = <subscription folder>/:/tmp/` and `HOME` is that same
+  folder, so `{WEBSPACEROOT}` is the subscription folder and PHP can read `app/` and `vendor/` beside
+  `public_html/`. If `/install` ever reports an `open_basedir` problem, the
+  fallback is the restricted layout from README.md step 3.
+- Default timezone UTC (the app sets its own).
+
+### Database (created 2026-10-02)
+
+MariaDB 10.11 at `localhost:3306`, one database plus one user scoped to it,
+linked to the site `macrolab.citg.tudelft.nl` in Plesk. Plesk added no name
+prefix. Name, user (it contains a hyphen; quote it in config.php) and password
+are in the user's password manager. The database is empty until `/install`
+runs.
+
+## Deployment status (as of 2026-10-02, end of day)
 
 **Blocked on DNS.** `macrolab.citg.tudelft.nl` returned NXDOMAIN from
 `ns1.tudelft.nl`, so Plesk's Let's Encrypt issuance failed
 (`urn:ietf:params:acme:error:dns`). The tudelft.nl zone is managed by ICT, not
-Plesk. ICT was asked to create the record (A -> 131.180.77.135 or CNAME ->
-lamp8.tudelft.nl) and replied that registration "can take a few working days".
+Plesk. ICT was asked to create the record (an A record to the shared hosting
+server, or a CNAME to it) and replied that registration "can take a few working days".
+Check with `curl -s "https://dns.google/resolve?name=macrolab.citg.tudelft.nl&type=A"`
+(`Status` 0 with an `Answer` means it resolves; 3 is NXDOMAIN) or by opening the
+site.
 
-Done:
-- Deployment bundle built once on the original (WSL) machine as
-  `~/macrolab-deploy.zip`. It contains a production `app/config.php` with
-  `base_url = https://macrolab.citg.tudelft.nl`, a generated `app.key` and
-  `install_token`, and DB user/password placeholders `FILL_IN_DB_USER` /
-  `FILL_IN_DB_PASSWORD`. That zip and token exist only on that machine.
+Done: database created; PHP set to Apache mode; phpinfo verified; document root
+changed to `public_html` (confirm it was saved).
 
-Not done yet (the user had not executed any server step when this was written):
-1. Plesk -> Databases: create DB (e.g. `macrolab`) + a user scoped to it.
-2. Plesk -> PHP Settings: confirm extensions `pdo_mysql`, `mbstring`,
-   `openssl`, `dom`, and preferably `sodium`.
-3. Plesk -> Files: upload zip to the subscription root (one level above
-   `httpdocs`), Extract Files, delete Plesk's default `httpdocs/index.html`,
-   delete the zip.
-4. Edit `app/config.php` in File Manager: fill DB name/user/pass; set
-   permissions 600.
-5. **After DNS resolves:** Plesk -> SSL/TLS Certificates -> issue Let's Encrypt.
+To do, in order:
+1. ~~Rename the GitHub repo to `macrolab-website`~~ - done; local remote updated.
+2. ~~Plesk -> Git~~ - done: repository `macrolab-website.git`, branch `main`,
+   deployed to `/`; `app/`, `public_html/`, `composer.json` landed in the
+   subscription root. Confirm the deployment mode is Manual.
+3. ~~Get `vendor/` onto the server~~ - done with Plesk PHP Composer.
+4. ~~Create `app/config.php`~~ - done 2026-10-02 (permissions 600).
+5. **After DNS resolves:** Plesk -> SSL/TLS Certificates -> Let's Encrypt, and
+   **untick the www option**: `www.macrolab.citg.tudelft.nl` is not in DNS and
+   would fail the same way.
 6. **After HTTPS works:** open
-   `https://macrolab.citg.tudelft.nl/install?token=<install_token, URL-encoded>`.
-   QR code and recovery codes are shown once only. Then blank `install_token`
-   in `app/config.php`.
-7. Verify `/login` works and `/app/config.php` is NOT served (README step 5;
-   nginx fallback directives are there if routing 404s).
+   `https://macrolab.citg.tudelft.nl/install?token=<install_token, URL-encoded>`
+   (base64 tokens may contain `/`, `+`, `=`). QR code and recovery codes are
+   shown once only. Then blank `install_token` in `app/config.php`.
+7. Verify `/login` works and `https://macrolab.citg.tudelft.nl/app/config.php`
+   is NOT served (README step 5 has nginx fallback directives).
 8. Scheduled Task: daily PHP script `app/cli/prune.php`. Set up Backup Manager.
+9. Delete the unused `httpdocs/` folder.
 
 Steps 1-4 can be done before DNS is ready. Steps 5-6 must not: the app forces
 HTTPS and `/install` sends the token and admin password, so do not install via
 a preview URL or hosts-file override.
 
-If the original zip is unavailable on this machine, either read the token from
-the already-uploaded `app/config.php` via Plesk File Manager, or rebuild the
-bundle (below) with a fresh key and token. A new `app.key` is harmless before
-`/install` has run; after that it would invalidate the admin's TOTP enrolment.
-
-## Building the deployment bundle
-
-Build from a clean export so local files (dev config, dev `vendor/`) never leak
-into the upload:
-
-```bash
-B=$(mktemp -d)
-git archive HEAD | tar -x -C "$B/" && cd "$B"
-composer install --no-dev --optimize-autoloader --no-interaction
-cp app/config.example.php app/config.php
-php app/cli/generate-key.php   # -> app.key
-php app/cli/generate-key.php   # -> app.install_token
-# edit app/config.php: base_url, key, install_token, db block
-mkdir upload && mv public_html upload/httpdocs && mv app vendor upload/
-```
-
-Then zip the *contents* of `upload/` (so the archive root holds `httpdocs/`,
-`app/`, `vendor/`) and make sure the dotfiles `httpdocs/.htaccess` and
-`app/.htaccess` are included. `zip` may not be installed; PHP's `ZipArchive`
-works. When scripting the config edits, pass values to `php -r` as arguments
-(`$argv`), not via unexported shell variables. That mistake once left the key
-and token empty.
-
-The install token is base64 and may contain `/`, `+` or `=`: URL-encode it in
-the `/install?token=` link.
-
 ## Updates after go-live
 
-Rebuild `vendor/` only if `composer.lock` changed, upload changed files via
-File Manager or FTPS, and apply new migrations from Administration -> System ->
-Apply migrations. Do not overwrite the server's `app/config.php` with a fresh
-bundle. Plesk Git deploy is possible but needs a `deploy` branch containing
-`vendor/` and `httpdocs/` (see README.md "Updating later").
+Push to GitHub, then Plesk -> Git -> Pull now, then Deploy now. If
+`composer.lock` changed, run Install in PHP Composer. If a release adds a
+migration, apply it from Administration -> System -> Apply migrations. The
+server's `app/config.php` is never overwritten by a pull; do not delete it.

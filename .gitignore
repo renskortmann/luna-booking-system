@@ -19,3 +19,5 @@ recovery_codes.txt
 .vscode/
 *.swp
 .DS_Store
+docs/PHP 8.2.34 - phpinfo().pdf
+CLAUDE.local.md
