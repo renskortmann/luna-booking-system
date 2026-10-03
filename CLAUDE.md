@@ -41,7 +41,7 @@ without a shell on the server (see "Getting vendor/ onto the server").
 | Panel | Plesk, reachable only from campus network or eduVPN |
 | PHP | 8.2.34, run as "FPM application served by Apache" (so `.htaccess` works) |
 | Document root | `public_html` (changed from Plesk's default `httpdocs` in Hosting Settings) |
-| Access | Plesk web UI (File Manager, Databases, SSL, Scheduled Tasks, Git). FTP(S). Plesk has an "SSH access" link, but the README assumes no shell; unverified. No outbound mail |
+| Access | Plesk web UI (File Manager, Databases, SSL, Scheduled Tasks, Git). FTP(S). SSH access "Forbidden" (Hosting Settings, not changeable by the subscription; verified 2026-10-03), so no shell. No outbound mail |
 
 ## Deployment strategy: Plesk Git, no zip
 
@@ -154,49 +154,66 @@ runs.
 
 ## Deployment status (as of 2026-10-03)
 
-**DNS resolved, HTTPS live.** `macrolab.citg.tudelft.nl` is a CNAME to the
-shared hosting server (ICT created it; the zone is not managed in Plesk). A
-Let's Encrypt certificate was issued 2026-10-02 (expires 2026-12-31, Plesk
-renews it). Checked 2026-10-03 from outside: HTTP redirects to HTTPS; unknown
-paths get the app's own 404 (so `.htaccess` routing works); `/assets/app.css`
-200; `/app/config.php` 403; security headers and the secure session cookie are
-sent. `/login` and `/admin/login` return 500, presumably because the database
-is still empty until `/install` runs (confirm in Plesk -> Logs: a
-`[macrolab] unhandled:` line saying a table doesn't exist is expected; "Access
-denied" would mean the `db` block in `config.php` is wrong). Plesk's site
-Preview shows the server's default page, not this site, so it is no use for
-testing; `curl --resolve <host>:443:<server IP>` works instead.
+**Live.** `macrolab.citg.tudelft.nl` is a CNAME to the shared hosting server
+(ICT created it; the zone is not managed in Plesk). A Let's Encrypt certificate
+was issued 2026-10-02 (expires 2026-12-31, Plesk renews it). `/install` ran on
+2026-10-03, the administrator signs in with password + TOTP, and
+`install_token` is blank again (`/install` answers 503 "Installer not
+enabled"). Checked from outside: HTTP redirects to HTTPS; unknown paths get the
+app's own 404 (so `.htaccess` routing works); `/assets/app.css` 200;
+`/app/config.php` 403; `/login` and `/admin/login` 200; security headers and
+the secure session cookie are sent. Plesk's site Preview shows the server's
+default page, not this site, so it is no use for testing.
+
+The first install attempt exposed a bug, since fixed: the installer's rate
+limit queried `login_attempts` before the installer had created it, so
+`/install` failed with a 500 on an empty database (`InstallerTest` covers it).
 
 Done: database created; PHP set to Apache mode; phpinfo verified; document root
-changed to `public_html` (confirmed 2026-10-03 on the PHP Settings page).
+`public_html` (confirmed on the PHP Settings page); Plesk Git deploy (keeps
+untracked files, removes deleted ones); PHP Composer Install; `app/config.php`
+(permissions 600, idle limits 24); certificate (without `www`, which is not in
+DNS); `/install`.
 
-To do, in order:
-1. ~~Rename the GitHub repo to `macrolab-website`~~ - done; local remote updated.
-2. ~~Plesk -> Git~~ - done: repository `macrolab-website.git`, branch `main`,
-   deployed to `/`; `app/`, `public_html/`, `composer.json` landed in the
-   subscription root. Confirm the deployment mode is Manual.
-3. ~~Get `vendor/` onto the server~~ - done with Plesk PHP Composer.
-4. ~~Create `app/config.php`~~ - done 2026-10-02 (permissions 600).
-5. ~~Let's Encrypt certificate~~ - done 2026-10-02 (without `www`, which is not
-   in DNS).
-6. **Next - HTTPS works now:** open
-   `https://macrolab.citg.tudelft.nl/install?token=<install_token, URL-encoded>`
-   (base64 tokens may contain `/`, `+`, `=`). QR code and recovery codes are
-   shown once only. Then blank `install_token` in `app/config.php`.
-7. Verify `/login` works and `https://macrolab.citg.tudelft.nl/app/config.php`
-   is NOT served (README step 7 has nginx fallback directives). `/install`'s
-   "Application directory" check should say "outside the document root",
-   which confirms the `public_html` document root was saved. After the first
-   real sign-in, check Administration -> Audit log: the address must be your
-   own, not the server's. If every entry shows the server's address (nginx
-   proxying), set `app.trusted_proxy_header` to `'X-Real-IP'` in
-   `app/config.php`, or the per-IP login throttle treats all visitors as one.
-8. Scheduled Task: daily PHP script `app/cli/prune.php`. Set up Backup Manager.
-9. Delete the unused `httpdocs/` folder.
-
-Steps 1-4 can be done before DNS is ready. Steps 5-6 must not: the app forces
-HTTPS and `/install` sends the token and admin password, so do not install via
-a preview URL or hosts-file override.
+To do:
+1. ~~Client addresses~~ - verified 2026-10-03: the audit log shows the
+   visitor's real public address (Plesk's nginx passes it to Apache/PHP), so
+   `app.trusted_proxy_header` stays null.
+2. ~~Git deployment mode~~ - confirmed Manual (2026-10-03).
+3. ~~Scheduled Task~~ - daily "Run a PHP script" `app/cli/prune.php` (PHP 8.2)
+   set up 2026-10-03; Run Now printed the expected "Pruned: ..." line, so CLI
+   PHP works under `open_basedir`.
+   **Backups: open.** Backup Manager has no remote storage available (no FTP
+   server, no other remote target), so Plesk backups could only sit on the
+   same server, inside the 1000 MB quota, and would not survive losing it.
+   Options to decide later: download Plesk backups regularly, or export the
+   database from phpMyAdmin (SQL) on a schedule and keep it off the server; ask
+   ICT whether the hosting has server-level backups. `app/config.php` values
+   are in the password manager; the code is in git.
+4. ~~Database grants and engine~~ - verified 2026-10-03: MariaDB 10.11.19,
+   default engine InnoDB; the migrations create every table `ENGINE=InnoDB`
+   (with `NO_ENGINE_SUBSTITUTION`), and migration 003 (`ALTER TABLE`, drop
+   index) ran during `/install`, so the user has the rights migrations need.
+   SSH: forbidden (verified 2026-10-03). CGI unticked in Hosting Settings
+   (unused). Still to look at in Plesk: nginx proxy/static settings, where PHP
+   errors are logged.
+   **Web Application Firewall: settled 2026-10-03.** ModSecurity 3.0 with
+   the Comodo (free) rule set on nginx, mode **On** (it blocks scanners trying
+   `/.env` and `/.git/config`). Rule **243420** ("Information disclosure
+   vulnerability in Eclipse Jetty", CVE-2015-2080) is **switched off** for this
+   site: it inspects responses and turned every 400 answer to a form
+   submission (wrong password, stale form, validation error) into a 403 that
+   counts towards a Fail2ban ban of the whole IP address - site and Plesk -
+   which is what locked us out for an hour. After switching it off, a wrong
+   password shows the app's own message. The app also no longer sends 400 at
+   all: invalid input is 422 (`HttpException::unprocessable()`, guarded by
+   `tests/Unit/NoStatus400Test.php`). JSON API requests with quotes,
+   semicolons, `<`, `--`, "select"/"drop"/"union" in notes pass the firewall.
+   **Never probe the live site with requests the firewall may block from the
+   user's own network** (Claude runs in WSL on the same public IP): a ban locks
+   the user out of the site and Plesk.
+5. After 25 idle minutes, a reload must ask to sign in again.
+6. Delete the unused `httpdocs/` folder.
 
 ## Updates after go-live
 
