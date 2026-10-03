@@ -55,7 +55,7 @@ final class AdminTimeController
             'title'    => 'Activities',
             'projects' => Projects::all(),
             'error'    => $error,
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     public function entries(Request $request): Response

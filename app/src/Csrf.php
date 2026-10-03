@@ -45,7 +45,7 @@ final class Csrf
         $provided = $request->header(self::HEADER) ?? $request->post(self::FIELD) ?? '';
 
         if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $provided)) {
-            throw HttpException::badRequest(
+            throw HttpException::unprocessable(
                 'Your session expired or the form was stale. Reload the page and try again.'
             );
         }

@@ -56,7 +56,7 @@ final class AccountController
                 }
             }
 
-            $status = 400;
+            $status = 422;
         }
 
         return View::page('account', [

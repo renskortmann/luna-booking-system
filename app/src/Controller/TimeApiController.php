@@ -33,7 +33,7 @@ final class TimeApiController
         $day = TimeRules::parseDate($request->post('day', '') ?? '');
 
         if ($day === null) {
-            throw HttpException::badRequest('That day could not be read.');
+            throw HttpException::unprocessable('That day could not be read.');
         }
 
         $hours = $request->post('hours', '') ?? '';

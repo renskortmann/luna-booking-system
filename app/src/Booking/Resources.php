@@ -138,7 +138,7 @@ final class Resources
                 : self::findBySlug($identifier));
 
         if ($row === null || (int) $row['is_active'] !== 1) {
-            throw HttpException::badRequest('That machine is not available for booking.');
+            throw HttpException::unprocessable('That machine is not available for booking.');
         }
 
         return $row;

@@ -81,7 +81,7 @@ final class AdminController
             'title'    => 'Administrator sign-in',
             'username' => $request->post('username', '') ?? '',
             'error'    => $error,
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     public function twoFactor(Request $request): Response
@@ -134,7 +134,7 @@ final class AdminController
         return View::page('admin/two_factor', [
             'title' => 'One-time code',
             'error' => $error,
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     public function logout(Request $request): Response
@@ -207,7 +207,7 @@ final class AdminController
             'inviteLink' => $inviteLink,
             'error'      => $error,
             'authMode'   => Settings::authMode(),
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     /**
@@ -335,7 +335,7 @@ final class AdminController
             'title'    => 'Machines',
             'machines' => Resources::all(),
             'error'    => $error,
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     private function handleMachineAction(Request $request): void
@@ -439,7 +439,7 @@ final class AdminController
             'machines' => Resources::all(),
             'filter'   => $filtered === null ? '' : (string) $filtered['slug'],
             'error'    => $error,
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     private function handleBookingAction(Request $request): void
@@ -549,7 +549,7 @@ final class AdminController
             'authMode'     => Settings::authMode(),
             'ssoAvailable' => Settings::ssoAvailable(),
             'error'        => $error,
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     private function saveSettings(Request $request): void
@@ -788,7 +788,7 @@ final class AdminController
             'newTotpQr'    => $newTotp === null ? null : Qr::svg($newTotp['uri']),
             'minimum'      => Config::int('auth.password_min_length', 12),
             'error'        => $error,
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     // --------------------------------------------------------------- installer
@@ -898,6 +898,6 @@ final class AdminController
             'pending'  => $migrator->pending(),
             'applied'  => $migrator->applied(),
             'token'    => $provided,
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 }

@@ -26,9 +26,21 @@ class HttpException extends RuntimeException
         return $this->publicMessage ?? self::defaultMessage($this->status);
     }
 
-    public static function badRequest(string $publicMessage = 'That request could not be processed.'): self
+    /**
+     * Input the application cannot use: a stale form, a missing field, a
+     * malformed date.
+     *
+     * Deliberately 422 and never 400, throughout the application. The TU Delft
+     * hosting runs ModSecurity with the Comodo rule set, whose rule 243420
+     * (an Eclipse Jetty flaw) turns any 400 answer to a form submission into a
+     * 403 and counts it towards a Fail2ban ban of the whole IP address. A few
+     * mistyped passwords would then lock a lab out of the server. The rule is
+     * switched off for this site, but the application should not depend on
+     * that.
+     */
+    public static function unprocessable(string $publicMessage = 'That request could not be processed.'): self
     {
-        return new self(400, 'Bad request', $publicMessage);
+        return new self(422, 'Unprocessable content', $publicMessage);
     }
 
     public static function unauthorized(string $publicMessage = 'Please sign in to continue.'): self
@@ -65,6 +77,7 @@ class HttpException extends RuntimeException
     {
         return match ($status) {
             400 => 'That request could not be processed.',
+            422 => 'That request could not be processed.',
             401 => 'Please sign in to continue.',
             403 => 'You are not allowed to do that.',
             404 => 'Page not found.',

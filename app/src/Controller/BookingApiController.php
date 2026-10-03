@@ -42,7 +42,7 @@ final class BookingApiController
             ?? Clock::now()->modify('+3 months');
 
         if ($to <= $from) {
-            throw HttpException::badRequest('The requested date range is empty.');
+            throw HttpException::unprocessable('The requested date range is empty.');
         }
 
         // Keep one request from asking for the entire history.
@@ -148,7 +148,7 @@ final class BookingApiController
         $end = Clock::parseInstant($request->post('end', '') ?? '');
 
         if ($start === null || $end === null) {
-            throw HttpException::badRequest('A booking needs a start and an end time.');
+            throw HttpException::unprocessable('A booking needs a start and an end time.');
         }
 
         return [$start, $end];
@@ -166,7 +166,7 @@ final class BookingApiController
         $user = Users::findByNetid($netid);
 
         if ($user === null) {
-            throw HttpException::badRequest(
+            throw HttpException::unprocessable(
                 'No user with netID "' . $netid . '". Add them to the allowlist first.'
             );
         }

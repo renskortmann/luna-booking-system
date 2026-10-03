@@ -74,7 +74,7 @@ final class AuthController
             'error'      => $error,
             'localOpen'  => Settings::localLoginEnabled(),
             'ssoOpen'    => Settings::samlLoginEnabled(),
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     /**
@@ -156,7 +156,7 @@ final class AuthController
             'token'    => $token,
             'error'    => $error,
             'minimum'  => \Macrolab\Config::int('auth.password_min_length', 12),
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     /**

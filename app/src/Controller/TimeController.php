@@ -153,7 +153,7 @@ final class TimeController
             'projects' => Projects::allActive(),
             'rules'    => TimeRuleSet::fromSettings(),
             'error'    => $error,
-        ], $error !== null ? 400 : 200);
+        ], $error !== null ? 422 : 200);
     }
 
     public function delete(Request $request, string $id): Response

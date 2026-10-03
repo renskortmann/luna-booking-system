@@ -80,7 +80,7 @@ final class Projects
             : self::find((int) $identifier);
 
         if ($project === null || !$project->isActive) {
-            throw HttpException::badRequest('That activity is not available for time registration.');
+            throw HttpException::unprocessable('That activity is not available for time registration.');
         }
 
         return $project;

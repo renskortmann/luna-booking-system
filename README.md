@@ -162,7 +162,7 @@ shell on the server. FTP is the fallback, described at the end.
 | **Git** extension | The deployment channel: Plesk pulls this repository from GitHub |
 | **PHP Composer** extension | Builds `vendor/` on the server from `composer.lock` |
 | **File Manager** | Where `app/config.php` is created and edited |
-| **No shell relied on** | Plesk lists an SSH access option, but whether it gives a usable shell is unverified, so nothing depends on one. The schema and the administrator account are created in the browser, at `/install` |
+| **No SSH** | Hosting Settings shows SSH access as "Forbidden", and the subscription cannot change it. There is no command line: the schema and the administrator account are created in the browser, at `/install`, and later migrations are applied from Administration → System |
 | FTP, unlimited users | Only a fallback. Use **FTPS** - plain FTP sends the password in the clear |
 | 1000 MB webspace, 10 databases | Ample: this application plus its dependencies is a few MB, and it uses one database |
 | SSL available | Required. The application refuses plain HTTP |
@@ -499,6 +499,13 @@ Shared by both systems:
   alike. That is the session lifetime of the TU Delft hosting, which deletes
   older session files and does not let the subscription change it, so the idle
   limits in `app/config.php` are set to match rather than promise more.
+- **No 400 answers.** Invalid input - a wrong password, a stale form, a
+  missing field - is answered with 422. The TU Delft hosting's firewall
+  (ModSecurity, Comodo rules) has a rule, 243420, that turns a 400 answer to a
+  form submission into a 403 and counts it towards banning the visitor's IP
+  address from the whole server. The rule is switched off for this site, and
+  the application does not rely on that. `tests/Unit/NoStatus400Test.php` keeps
+  it that way.
 - **Personal data** is limited to netID, display name and email address, plus
   each person's own bookings, their own time entries (with their notes) and
   the audit log. No email is sent and the application makes no outbound
