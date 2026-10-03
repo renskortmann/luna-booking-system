@@ -817,12 +817,25 @@ final class AdminController
             ], 503);
         }
 
-        RateLimit::assertAllowed('install');
+        $migrator = new Migrator(Db::get());
+
+        // The throttle keeps its count in login_attempts, which the installer
+        // itself creates: on a fresh database there is nothing to count in yet,
+        // and querying it would fail before the schema could ever be loaded.
+        // Until then the long random token is the only protection, and enough.
+        $throttled = $migrator->hasTable('login_attempts');
+
+        if ($throttled) {
+            RateLimit::assertAllowed('install');
+        }
 
         $provided = (string) ($request->post('install_token') ?? $request->query('token') ?? '');
 
         if (!hash_equals($token, $provided)) {
-            RateLimit::record('install', false);
+            if ($throttled) {
+                RateLimit::record('install', false);
+            }
+            // Audit::log() tolerates a missing audit_log table.
             Audit::log('install_token_rejected', 'system', null, [],
                 actorType: 'anonymous', actorLabel: 'anonymous');
 
@@ -830,10 +843,10 @@ final class AdminController
             throw HttpException::notFound();
         }
 
-        RateLimit::record('install', true);
-        RateLimit::clear('install');
-
-        $migrator = new Migrator(Db::get());
+        if ($throttled) {
+            RateLimit::record('install', true);
+            RateLimit::clear('install');
+        }
 
         if ($migrator->hasTable('admin_account') && AdminAuth::exists()) {
             throw HttpException::notFound();

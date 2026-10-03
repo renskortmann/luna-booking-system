@@ -91,7 +91,8 @@ on the first deployment:
 - **Install** (not Update) used the versions from `composer.lock` and created
   `vendor/` beside `app/`, with `autoload.php` and only the production packages.
 
-After a pull that changes `composer.lock`, run Install again. Never click
+After a pull that changes `composer.lock`, run Install again. (Done after the
+2026-10-03 deploy that moved classes into `Booking/` and `Time/`.) Never click
 Update on the server: it ignores `composer.lock`. Change dependencies locally
 with `composer update`, commit the lock file, then pull and Install.
 
@@ -101,8 +102,10 @@ vendor`, deploy that branch).
 
 ### app/config.php (created once on the server)
 
-Not in git, and deployment does not delete untracked files (assumption: verify
-after the first pull that `config.php` survived). Create it in Plesk File
+Not in git, and deployment does not delete untracked files (verified
+2026-10-03: after a Pull + Deploy, `config.php` kept its contents and
+permissions 600, and `vendor/` stayed; files deleted from the repo were removed
+from the server). Create it in Plesk File
 Manager by copying `app/config.example.php` to `app/config.php`, then set:
 - `app.base_url` = `https://macrolab.citg.tudelft.nl`
 - `app.key` and `app.install_token`: run `php app/cli/generate-key.php` locally
@@ -149,16 +152,20 @@ prefix. Name, user (it contains a hyphen; quote it in config.php) and password
 are in the user's password manager. The database is empty until `/install`
 runs.
 
-## Deployment status (as of 2026-10-02, end of day)
+## Deployment status (as of 2026-10-03)
 
-**Blocked on DNS.** `macrolab.citg.tudelft.nl` returned NXDOMAIN from
-`ns1.tudelft.nl`, so Plesk's Let's Encrypt issuance failed
-(`urn:ietf:params:acme:error:dns`). The tudelft.nl zone is managed by ICT, not
-Plesk. ICT was asked to create the record (an A record to the shared hosting
-server, or a CNAME to it) and replied that registration "can take a few working days".
-Check with `curl -s "https://dns.google/resolve?name=macrolab.citg.tudelft.nl&type=A"`
-(`Status` 0 with an `Answer` means it resolves; 3 is NXDOMAIN) or by opening the
-site.
+**DNS resolved, HTTPS live.** `macrolab.citg.tudelft.nl` is a CNAME to the
+shared hosting server (ICT created it; the zone is not managed in Plesk). A
+Let's Encrypt certificate was issued 2026-10-02 (expires 2026-12-31, Plesk
+renews it). Checked 2026-10-03 from outside: HTTP redirects to HTTPS; unknown
+paths get the app's own 404 (so `.htaccess` routing works); `/assets/app.css`
+200; `/app/config.php` 403; security headers and the secure session cookie are
+sent. `/login` and `/admin/login` return 500, presumably because the database
+is still empty until `/install` runs (confirm in Plesk -> Logs: a
+`[macrolab] unhandled:` line saying a table doesn't exist is expected; "Access
+denied" would mean the `db` block in `config.php` is wrong). Plesk's site
+Preview shows the server's default page, not this site, so it is no use for
+testing; `curl --resolve <host>:443:<server IP>` works instead.
 
 Done: database created; PHP set to Apache mode; phpinfo verified; document root
 changed to `public_html` (confirmed 2026-10-03 on the PHP Settings page).
@@ -170,10 +177,9 @@ To do, in order:
    subscription root. Confirm the deployment mode is Manual.
 3. ~~Get `vendor/` onto the server~~ - done with Plesk PHP Composer.
 4. ~~Create `app/config.php`~~ - done 2026-10-02 (permissions 600).
-5. **After DNS resolves:** Plesk -> SSL/TLS Certificates -> Let's Encrypt, and
-   **untick the www option**: `www.macrolab.citg.tudelft.nl` is not in DNS and
-   would fail the same way.
-6. **After HTTPS works:** open
+5. ~~Let's Encrypt certificate~~ - done 2026-10-02 (without `www`, which is not
+   in DNS).
+6. **Next - HTTPS works now:** open
    `https://macrolab.citg.tudelft.nl/install?token=<install_token, URL-encoded>`
    (base64 tokens may contain `/`, `+`, `=`). QR code and recovery codes are
    shown once only. Then blank `install_token` in `app/config.php`.
