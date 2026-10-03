@@ -25,7 +25,11 @@ final class Session
 
         $now = time();
         $_SESSION[self::CREATED] ??= $now;
-        $_SESSION[self::SEEN] = $now;
+        // Only for a new session. Activity is recorded by isAlive(), after the
+        // idle check: refreshing it here, on every read, would reset the idle
+        // clock before anything could look at it, and no session would ever
+        // time out.
+        $_SESSION[self::SEEN] ??= $now;
         $_SESSION[self::AGENT] ??= self::agentHash();
     }
 
@@ -69,7 +73,10 @@ final class Session
             session_regenerate_id(true);
         }
 
+        // Signing in starts both clocks afresh, so a sign-in page left open for
+        // a while does not count as idle time.
         $_SESSION[self::CREATED] = time();
+        $_SESSION[self::SEEN] = time();
     }
 
     public static function destroy(): void

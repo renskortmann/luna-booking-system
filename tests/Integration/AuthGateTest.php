@@ -7,6 +7,7 @@ namespace Macrolab\Tests\Integration;
 use Macrolab\Auth;
 use Macrolab\Auth\AccessDeniedException;
 use Macrolab\Auth\Identity;
+use Macrolab\Config;
 use Macrolab\Db;
 use Macrolab\Settings;
 use Macrolab\Users;
@@ -119,6 +120,39 @@ final class AuthGateTest extends DatabaseTestCase
 
         self::assertNull(Auth::user());
         self::assertFalse(Auth::isAdmin());
+    }
+
+    public function testAnIdleMemberSessionEnds(): void
+    {
+        Users::create('ivy');
+        Auth::signIn(new Identity(netid: 'ivy', method: 'test'));
+
+        $_SESSION['_last_seen_at'] = time() - (Config::int('auth.user_session_idle_minutes') + 1) * 60;
+        Auth::resetCache();
+
+        self::assertNull(Auth::user(), 'idle longer than the limit: signed out');
+    }
+
+    public function testAnActiveMemberSessionContinues(): void
+    {
+        Users::create('jay');
+        Auth::signIn(new Identity(netid: 'jay', method: 'test'));
+
+        $_SESSION['_last_seen_at'] = time() - (Config::int('auth.user_session_idle_minutes') - 1) * 60;
+        Auth::resetCache();
+
+        self::assertSame('jay', Auth::user()?->netid, 'idle shorter than the limit: still signed in');
+        self::assertGreaterThan(time() - 5, $_SESSION['_last_seen_at'], 'and the activity is recorded');
+    }
+
+    public function testAnIdleAdministratorSessionEnds(): void
+    {
+        Auth::completeAdminLogin(1, 'admin');
+        self::assertTrue(Auth::isAdmin());
+
+        $_SESSION['_last_seen_at'] = time() - (Config::int('auth.admin_session_idle_minutes') + 1) * 60;
+
+        self::assertFalse(Auth::isAdmin(), 'idle longer than the limit: signed out');
     }
 
     /**
