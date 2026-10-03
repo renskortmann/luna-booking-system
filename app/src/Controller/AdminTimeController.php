@@ -52,7 +52,7 @@ final class AdminTimeController
         }
 
         return View::page('admin/projects', [
-            'title'    => 'Projects',
+            'title'    => 'Activities',
             'projects' => Projects::all(),
             'error'    => $error,
         ], $error !== null ? 400 : 200);
@@ -93,7 +93,7 @@ final class AdminTimeController
         ]);
 
         $body = Csv::fromRows(
-            ['date', 'netid', 'name', 'project', 'project_code', 'hours', 'minutes', 'note', 'entry_id'],
+            ['date', 'netid', 'name', 'activity', 'activity_code', 'hours', 'minutes', 'note', 'entry_id'],
             array_map(
                 static fn (TimeEntry $e): array => [
                     $e->workedOnDate(),
@@ -137,7 +137,7 @@ final class AdminTimeController
         $project = $projectId > 0 ? Projects::find($projectId) : null;
 
         if ($project === null) {
-            throw new RuntimeException('That project no longer exists.');
+            throw new RuntimeException('That activity no longer exists.');
         }
 
         switch ($action) {
@@ -175,7 +175,7 @@ final class AdminTimeController
                     throw new RuntimeException(
                         $project->name . ' has ' . $entries . ' time '
                         . ($entries === 1 ? 'entry' : 'entries')
-                        . ' on record. Retire it instead of deleting it, so the hours keep their project.'
+                        . ' on record. Retire it instead of deleting it, so the hours keep their activity.'
                     );
                 }
 

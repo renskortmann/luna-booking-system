@@ -75,7 +75,7 @@ final class TimeEntry
 
     public function projectLabel(): string
     {
-        $name = $this->projectName ?? ('project #' . $this->projectId);
+        $name = $this->projectName ?? ('activity #' . $this->projectId);
 
         return $this->projectCode === null ? $name : $name . ' (' . $this->projectCode . ')';
     }

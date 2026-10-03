@@ -22,7 +22,7 @@ $flashes = Session::takeFlashes();
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title><?= e($title ?? 'Booking') ?> &middot; <?= e(Config::string('app.name', 'Macrolab website')) ?></title>
+    <title><?= isset($title) ? e($title) . ' &middot; ' : '' ?><?= e(Config::string('app.name', 'Macrolab website')) ?></title>
     <link rel="stylesheet" href="<?= e(path('/assets/app.css')) ?>">
 </head>
 <body>

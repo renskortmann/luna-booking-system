@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Macrolab;
 
 /**
- * Operational settings the admin edits in the web UI: the booking rules and the
- * active authentication mode. A row in the `settings` table overrides the
+ * Operational settings the admin edits in the web UI: the booking rules, the
+ * time registration limits and the active authentication mode. A row in the `settings` table overrides the
  * default below, so a fresh install is already usable.
  */
 final class Settings

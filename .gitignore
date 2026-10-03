@@ -4,9 +4,8 @@
 !/app/secrets/.gitkeep
 recovery_codes.txt
 
-# Composer. vendor/ is built locally and uploaded, because the LAMP hosting has
-# no shell to run Composer on. composer.lock IS committed: it is what makes the
-# locally built vendor/ reproducible.
+# Composer. vendor/ is built on the server by Plesk's PHP Composer from the committed composer.lock.
+# composer.lock IS committed: Composer Install builds vendor/ from it, so every build gets the same versions.
 /vendor/
 
 # Tooling

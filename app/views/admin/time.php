@@ -36,9 +36,9 @@ use Macrolab\Time\TimeRules;
             <?php endforeach; ?>
         </select>
 
-        <label for="project">Project</label>
+        <label for="project">Activity</label>
         <select id="project" name="project">
-            <option value="">all projects</option>
+            <option value="">all activities</option>
             <?php foreach ($projects as $project): ?>
                 <option value="<?= e($project->id) ?>"
                     <?= $project->id === $filter->projectId ? 'selected' : '' ?>>
@@ -68,7 +68,7 @@ use Macrolab\Time\TimeRules;
 
 <?php if ($byProject !== []): ?>
     <section class="card">
-        <h2>By project</h2>
+        <h2>By activity</h2>
         <dl class="facts">
             <?php foreach ($byProject as $row): ?>
                 <dt><?= e($row['project']) ?></dt>
@@ -86,7 +86,7 @@ use Macrolab\Time\TimeRules;
     <?php else: ?>
         <table class="wide">
             <thead>
-            <tr><th>Day</th><th>Who</th><th>Project</th><th class="num">Hours</th><th>Note</th></tr>
+            <tr><th>Day</th><th>Who</th><th>Activity</th><th class="num">Hours</th><th>Note</th></tr>
             </thead>
             <tbody>
             <?php foreach ($entries as $entry): ?>

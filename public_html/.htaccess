@@ -1,9 +1,10 @@
 # Macrolab website - document root configuration.
 #
-# If the hosting environment ignores .htaccess (AllowOverride None), NOTHING
-# here applies: routing breaks and, in the restricted layout, app/ becomes
-# readable. Verify before go-live by requesting /app/config.php and confirming
-# it is not served - see README.md.
+# Only Apache reads this file. On TU Delft Plesk hosting PHP must therefore run
+# as "FPM application served by Apache"; with "served by nginx" NOTHING here
+# applies and routing breaks. In the fallback layout, where app/ sits inside the
+# document root, app/ would then also become readable. Verify before go-live by
+# requesting /login and /app/config.php - see README.md, step 7.
 
 Options -Indexes -MultiViews
 
@@ -11,8 +12,9 @@ Options -Indexes -MultiViews
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Never serve the application directories, even when they sit inside the
-    # document root because the root could not be moved.
+    # Never serve the application directories. With the document root set to
+    # public_html they are outside it anyway; this rule covers the fallback
+    # layout, where they sit inside it.
     RewriteRule ^(app|vendor|tests|docs|docker)(/|$) - [F,L]
 
     # Serve real files and directories as-is (assets).

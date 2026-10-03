@@ -12,11 +12,18 @@ user's password manager.
 
 ## Project in one paragraph
 
-PHP 8.2+ / MySQL app for the TU Delft Macrolab: instrument booking at
-`/booking` and time registration at `/time`, behind one sign-in, with a hub at
-`/`. No framework; PSR-4 `Macrolab\` -> `app/src/`, routes in `app/routes.php`,
-plain PHP views in `app/views/`, migrations in `app/migrations/`. Only
-`public_html/index.php` is web-reachable. Composer deps must be installed
+PHP 8.2+ / MySQL app for the TU Delft Macrolab with two independent systems
+behind one sign-in and a hub at `/`: instrument booking at `/booking`, and time
+registration at `/time`, where lab technicians log hours per activity
+(maintenance, teaching support, tidying the lab, ...) so lab management can see
+how their time is spent. The activities are called "projects" in the code. No
+framework; PSR-4 `Macrolab\` -> `app/src/`, with `Macrolab\Booking` and
+`Macrolab\Time` in their own folders, which never use each other; routes in
+`app/routes.php`, plain PHP views in `app/views/`, migrations in
+`app/migrations/`. Only
+`public_html/index.php` is web-reachable. TU Delft SSO ("stage 2") is NOT
+built: routes, columns, setting and config are scaffolding, and
+`Settings::authMode()` stays `local` until `Macrolab\Auth\SamlProvider` exists. Composer deps must be installed
 without a shell on the server (see "Getting vendor/ onto the server").
 
 - Tests: `composer install && vendor/bin/phpunit` (integration suite is skipped
@@ -110,7 +117,12 @@ phpinfo from Plesk (`docs/PHP 8.2.34 - phpinfo().pdf`, gitignored) was taken
 first while PHP ran as "FPM served by nginx", then again after switching to
 "FPM application served by Apache". The second shows `SERVER_SOFTWARE =
 Apache` (nginx proxies in front), the same PHP version, ini files and
-`open_basedir`, and `HTTPS = on`, so `.htaccess` should now be honoured:
+`open_basedir`, and `HTTPS = on`, so `.htaccess` should now be honoured.
+That PDF still shows `DOCUMENT_ROOT = .../httpdocs`, so it predates the
+document-root change. Its `REMOTE_ADDR`, `X-Real-IP` and `SERVER_ADDR` are all
+the server itself, because Plesk's "PHP info" link fetches the page
+server-side. So it says nothing about what real visitors' addresses look like
+(see go-live step 7):
 
 - PHP 8.2.34, FPM, memory_limit 256M, upload/post 16M, max_execution_time 60.
 - All required extensions are loaded: `pdo_mysql`, `mbstring`, `openssl`
@@ -119,8 +131,15 @@ Apache` (nginx proxies in front), the same PHP version, ini files and
 - `open_basedir = <subscription folder>/:/tmp/` and `HOME` is that same
   folder, so `{WEBSPACEROOT}` is the subscription folder and PHP can read `app/` and `vendor/` beside
   `public_html/`. If `/install` ever reports an `open_basedir` problem, the
-  fallback is the restricted layout from README.md step 3.
+  fallback is the restricted layout in README.md "Fallbacks".
 - Default timezone UTC (the app sets its own).
+- Sessions: `session.save_path = /var/lib/php/session`, `session.gc_maxlifetime
+  = 1440`, `gc_probability = 0`. Plesk's PHP Settings page (checked
+  2026-10-03) offers no field for `gc_maxlifetime` and no "additional
+  directives" box, so the subscription cannot raise it. Decision (2026-10-03):
+  accept it. The idle limits (`auth.*_session_idle_minutes`) are 24 for members
+  and the admin, so the app's rule and the host's cleanup agree. The server's
+  `app/config.php` was created with the old 480/30 values: change them to 24.
 
 ### Database (created 2026-10-02)
 
@@ -142,7 +161,7 @@ Check with `curl -s "https://dns.google/resolve?name=macrolab.citg.tudelft.nl&ty
 site.
 
 Done: database created; PHP set to Apache mode; phpinfo verified; document root
-changed to `public_html` (confirm it was saved).
+changed to `public_html` (confirmed 2026-10-03 on the PHP Settings page).
 
 To do, in order:
 1. ~~Rename the GitHub repo to `macrolab-website`~~ - done; local remote updated.
@@ -159,7 +178,13 @@ To do, in order:
    (base64 tokens may contain `/`, `+`, `=`). QR code and recovery codes are
    shown once only. Then blank `install_token` in `app/config.php`.
 7. Verify `/login` works and `https://macrolab.citg.tudelft.nl/app/config.php`
-   is NOT served (README step 5 has nginx fallback directives).
+   is NOT served (README step 7 has nginx fallback directives). `/install`'s
+   "Application directory" check should say "outside the document root",
+   which confirms the `public_html` document root was saved. After the first
+   real sign-in, check Administration -> Audit log: the address must be your
+   own, not the server's. If every entry shows the server's address (nginx
+   proxying), set `app.trusted_proxy_header` to `'X-Real-IP'` in
+   `app/config.php`, or the per-IP login throttle treats all visitors as one.
 8. Scheduled Task: daily PHP script `app/cli/prune.php`. Set up Backup Manager.
 9. Delete the unused `httpdocs/` folder.
 
@@ -170,6 +195,8 @@ a preview URL or hosts-file override.
 ## Updates after go-live
 
 Push to GitHub, then Plesk -> Git -> Pull now, then Deploy now. If
-`composer.lock` changed, run Install in PHP Composer. If a release adds a
+`composer.lock` changed, or classes under `app/src/` were added or moved,
+run Install in PHP Composer (the latter only refreshes the optimised class
+map; PSR-4 still finds unmapped classes). If a release adds a
 migration, apply it from Administration -> System -> Apply migrations. The
 server's `app/config.php` is never overwritten by a pull; do not delete it.

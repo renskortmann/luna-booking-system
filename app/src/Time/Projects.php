@@ -80,7 +80,7 @@ final class Projects
             : self::find((int) $identifier);
 
         if ($project === null || !$project->isActive) {
-            throw HttpException::badRequest('That project is not available for time registration.');
+            throw HttpException::badRequest('That activity is not available for time registration.');
         }
 
         return $project;
@@ -91,7 +91,7 @@ final class Projects
         [$name, $code, $description] = self::clean($name, $code, $description);
 
         if (self::findByName($name) !== null) {
-            throw new RuntimeException('There is already a project called ' . $name . '.');
+            throw new RuntimeException('There is already an activity called ' . $name . '.');
         }
 
         $id = Db::get()->insert('projects', [
@@ -118,7 +118,7 @@ final class Projects
         $clash = self::findByName($name);
 
         if ($clash !== null && $clash->id !== $id) {
-            throw new RuntimeException('There is already a project called ' . $name . '.');
+            throw new RuntimeException('There is already an activity called ' . $name . '.');
         }
 
         Db::get()->update('projects', [
@@ -156,13 +156,13 @@ final class Projects
         $name = trim($name);
 
         if ($name === '' || mb_strlen($name) > 128) {
-            throw new RuntimeException('A project needs a name of 1 to 128 characters.');
+            throw new RuntimeException('An activity needs a name of 1 to 128 characters.');
         }
 
         $code = trim((string) $code);
 
         if (mb_strlen($code) > 32) {
-            throw new RuntimeException('A project code cannot be longer than 32 characters.');
+            throw new RuntimeException('An activity code cannot be longer than 32 characters.');
         }
 
         $description = trim((string) $description);

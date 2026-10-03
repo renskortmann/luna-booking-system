@@ -8,31 +8,34 @@ use Macrolab\Csrf;
 use Macrolab\Time\TimeRules;
 ?>
 <section class="card">
-    <h1>Projects</h1>
+    <h1>Activities</h1>
 
     <p class="muted small">
-        Every time entry belongs to one project. This list has nothing to do
-        with the machines: time is logged against work, not against equipment.
+        Technicians log their time against these activities under the general
+        lab code: maintaining equipment, supporting teaching, tidying up the
+        lab, and so on. Every time entry belongs to one activity. This list
+        has nothing to do with the machines: time is logged against work, not
+        against equipment.
     </p>
 
     <?php if ($error !== null): ?>
         <p class="alert" role="alert"><?= e($error) ?></p>
     <?php endif; ?>
 
-    <h2>Add a project</h2>
+    <h2>Add an activity</h2>
 
     <form method="post" action="<?= e(path('/admin/projects')) ?>" class="row">
         <?= Csrf::field() ?>
         <input type="hidden" name="action" value="add">
 
         <label for="name">Name</label>
-        <input id="name" name="name" type="text" required maxlength="128" placeholder="Beam alignment">
+        <input id="name" name="name" type="text" required maxlength="128" placeholder="Equipment maintenance">
 
         <label for="code">Code <span class="muted">(optional)</span></label>
-        <input id="code" name="code" type="text" maxlength="32" placeholder="BA-12">
+        <input id="code" name="code" type="text" maxlength="32" placeholder="MNT">
 
         <label for="description">Description <span class="muted">(optional)</span></label>
-        <input id="description" name="description" type="text" placeholder="what this project covers">
+        <input id="description" name="description" type="text" placeholder="what this activity covers">
 
         <button type="submit" class="primary">Add</button>
     </form>
@@ -43,7 +46,7 @@ use Macrolab\Time\TimeRules;
 
     <?php if ($projects === []): ?>
         <p class="muted">
-            No projects yet. Nobody can log time until there is at least one.
+            No activities yet. Nobody can log time until there is at least one.
         </p>
     <?php else: ?>
         <table class="wide">
@@ -101,8 +104,8 @@ use Macrolab\Time\TimeRules;
         </table>
 
         <p class="muted small">
-            A project with time on record cannot be removed - retire it instead,
-            so those hours keep the project they were booked to.
+            An activity with time on record cannot be removed - retire it
+            instead, so those hours keep the activity they were booked to.
         </p>
     <?php endif; ?>
 </section>

@@ -11,9 +11,10 @@ use Throwable;
  * Applies the SQL files in app/migrations, in filename order, and records what
  * it has done.
  *
- * Used both by app/cli/migrate.php and by the browser installer, because TU
- * Delft LAMP hosting offers no SSH or SFTP - only FTP and the Plesk panel - so
- * the command line cannot be the only way to load the schema.
+ * Used both by app/cli/migrate.php and by the browser (the installer, and
+ * Administration -> System for later migrations), because the TU Delft hosting
+ * is operated through the Plesk panel without a shell, so the command line
+ * cannot be the only way to load the schema.
  */
 final class Migrator
 {

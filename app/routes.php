@@ -51,8 +51,9 @@ $router->post('/logout', [AuthController::class, 'logout']);
 $router->form('/setup/{token}', [AuthController::class, 'setup']);
 $router->form('/account', [AccountController::class, 'show']);
 
-// Stage 2 - TU Delft SSO. The paths are reserved now so that the service
-// provider metadata we register with ICT never has to change.
+// Stage 2 - TU Delft SSO, not built yet: these answer 404 for now. The paths
+// are reserved so that the service provider metadata we register with ICT
+// never has to change.
 $router->get('/auth/saml/login', [AuthController::class, 'ssoNotEnabled']);
 $router->post('/auth/saml/acs', [AuthController::class, 'ssoNotEnabled']);
 $router->get('/auth/saml/sls', [AuthController::class, 'ssoNotEnabled']);

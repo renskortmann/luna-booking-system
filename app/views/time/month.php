@@ -29,7 +29,7 @@ use Macrolab\Time\TimeRules;
     <?php else: ?>
         <table class="wide">
             <thead>
-            <tr><th>Day</th><th>Project</th><th class="num">Hours</th><th>Note</th><th>Actions</th></tr>
+            <tr><th>Day</th><th>Activity</th><th class="num">Hours</th><th>Note</th><th>Actions</th></tr>
             </thead>
             <tbody>
             <?php foreach ($entries as $entry): ?>
@@ -58,7 +58,7 @@ use Macrolab\Time\TimeRules;
             </tfoot>
         </table>
 
-        <h3>By project</h3>
+        <h3>By activity</h3>
         <dl class="facts">
             <?php foreach ($byProject as $row): ?>
                 <dt><?= e($row['project']) ?></dt>

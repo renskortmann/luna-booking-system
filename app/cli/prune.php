@@ -7,6 +7,9 @@ declare(strict_types=1);
  *
  *   php app/cli/prune.php
  *
+ * On the TU Delft hosting that is a Plesk Scheduled Task of type "Run a PHP
+ * script" pointing at this file (README.md, step 8).
+ *
  * Deletes audit entries past the retention window set in the admin UI, spent
  * or expired invite links, old login-attempt records, and expired SAML
  * assertion ids.

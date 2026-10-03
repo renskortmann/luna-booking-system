@@ -159,7 +159,10 @@ final class AuthController
         ], $error !== null ? 400 : 200);
     }
 
-    /** Placeholder until stage 2: the SSO routes exist but are not wired yet. */
+    /**
+     * Placeholder until stage 2 is built: the SSO routes are reserved, but no
+     * SAML provider exists yet, so they answer 404.
+     */
     public function ssoNotEnabled(Request $request): Response
     {
         throw HttpException::notFound(

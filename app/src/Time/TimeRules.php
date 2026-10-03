@@ -45,7 +45,7 @@ final class TimeRules
             // One entry is one project's time for one day, so this is a
             // per-project daily limit; splitting the time is not an option.
             $errors[] = 'No more than ' . Clock::humanDuration($rules->maxMinutesPerEntry)
-                . ' can be logged on one project in a day.';
+                . ' can be logged on one activity in a day.';
         }
 
         // Only worth checking when this entry is itself sane.

@@ -46,7 +46,7 @@ final class Navigation
                 [
                     'href'  => '/admin',
                     'label' => 'Administration',
-                    'blurb' => 'People, machines, projects, rules and the audit log.',
+                    'blurb' => 'People, machines, activities, rules and the audit log.',
                 ],
             ];
         }
@@ -60,7 +60,7 @@ final class Navigation
             [
                 'href'  => '/time',
                 'label' => 'Time registration',
-                'blurb' => 'Log the hours you worked, against the project you worked on.',
+                'blurb' => 'Log your hours on the activities under the general lab code.',
             ],
             [
                 'href'  => '/account',

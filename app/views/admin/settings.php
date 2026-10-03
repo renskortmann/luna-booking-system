@@ -147,9 +147,9 @@ $timeField = static function (string $name, string $selected) use ($times): stri
             <legend>Time registration</legend>
 
             <p class="muted small">
-                These govern the hours employees log. They are unrelated to the
-                booking rules above: time is logged against a project, never
-                against a machine.
+                These govern the hours technicians log. They are unrelated to
+                the booking rules above: time is logged against an activity
+                under the general lab code, never against a machine.
             </p>
 
             <label for="time_min_entry_minutes">Shortest entry (minutes)</label>

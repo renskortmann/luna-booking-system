@@ -26,10 +26,14 @@ use Macrolab\View;
 
     <?php if ($rows === []): ?>
         <p class="muted">
-            There are no projects to log time against yet. Ask the
-            administrator to add one.
+            There are no activities under the general lab code to log time
+            against yet. Ask the administrator to add one.
         </p>
     <?php else: ?>
+        <p class="muted small">
+            Log the hours you spent on each activity under the general lab code.
+        </p>
+
         <form method="get" action="<?= e(path('/time')) ?>" class="day-nav" id="day-nav">
             <a class="day-step" href="<?= e(path('/time?day=' . $prevDay)) ?>"
                aria-label="Previous day" title="Previous day">&larr;</a>
@@ -65,7 +69,7 @@ use Macrolab\View;
                data-month-url="<?= e(path('/api/time/month')) ?>">
             <thead>
             <tr>
-                <th>Project</th>
+                <th>Activity</th>
                 <th>Code</th>
                 <th class="num">Hours</th>
                 <th>Remarks</th>
@@ -114,7 +118,7 @@ use Macrolab\View;
             Each row saves itself when you leave it. Hours can be written as
             <code>3.5</code>, <code>3,5</code>, <code>3:30</code> or
             <code>3h30</code>; clear the hours to remove them. The most you can
-            log on one project in a day is
+            log on one activity in a day is
             <?= e(TimeRules::formatHours($rules->maxMinutesPerEntry)) ?>, and
             on one day altogether
             <?= e(TimeRules::formatHours($rules->maxMinutesPerDay)) ?>.

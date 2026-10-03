@@ -11,7 +11,7 @@
 use Macrolab\Csrf;
 ?>
 <section class="card">
-    <h1>Install the booking system</h1>
+    <h1>Install the Macrolab website</h1>
 
     <p class="alert">
         This page loads the database schema and creates the one administrator

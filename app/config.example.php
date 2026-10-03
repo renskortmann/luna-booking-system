@@ -18,7 +18,9 @@ return [
 
         // Public base URL, no trailing slash. Baked into invite links and (in
         // stage 2) the SAML entityId and ACS URL, so fix this before go-live.
-        'base_url' => 'https://example.tudelft.nl/macrolab',
+        // A path is allowed (https://host/macrolab) when the site is mounted
+        // in a subdirectory; the TU Delft deployment has its own hostname.
+        'base_url' => 'https://macrolab.citg.tudelft.nl',
 
         // 32 random bytes, base64-encoded. Generate with:
         //   php app/cli/generate-key.php
@@ -35,15 +37,23 @@ return [
         // Set false only if the server genuinely has no TLS (development).
         'require_https' => true,
 
+        // Request header that carries the real client address when a reverse
+        // proxy sits in front of PHP, e.g. 'X-Real-IP'. Used for the per-IP
+        // login throttle and the audit log. Leave null unless needed: a header
+        // is trusted only when the proxy overwrites it, or clients could forge
+        // it. Plesk puts nginx in front of Apache; if the audit log shows the
+        // server's own address for every visitor, set this to 'X-Real-IP'.
+        'trusted_proxy_header' => null,
+
         /*
          * Enables the browser installer at /install?token=...
          *
-         * Needed on hosting without shell access (TU Delft LAMP gives FTP and
-         * the Plesk panel only), where /install is how the schema is loaded and
-         * the administrator account is created. Set it to a long random string
-         * BEFORE uploading this file, so that nobody who finds the address in
-         * the meantime can claim the administrator account. Remove it once the
-         * account exists.
+         * Needed on hosting without shell access (the TU Delft hosting is
+         * operated through the Plesk panel), where /install is how the schema
+         * is loaded and the administrator account is created. Set it to a long
+         * random string when creating this file, BEFORE the site is reachable,
+         * so that nobody who finds the address in the meantime can claim the
+         * administrator account. Blank it once the account exists.
          *
          * Generate one with: php app/cli/generate-key.php
          */
@@ -84,12 +94,15 @@ return [
     ],
 
     /*
-     * Stage 2 - TU Delft SSO. Ignored entirely while the `auth_mode` setting is
-     * 'local'. See docs/ICT-REQUEST.md for the registration request and
-     * README.md for the cutover runbook.
+     * Stage 2 - TU Delft SSO. NOT IMPLEMENTED YET: no code reads this block,
+     * and the sign-in mode stays 'local' until a SAML provider exists. It is
+     * here so the values are ready when stage 2 is built. See
+     * docs/ICT-REQUEST.md for the registration request and README.md for the
+     * planned cutover.
      */
     'saml' => [
-        // 'tudelft' for production, 'dev' for the Docker test IdP.
+        // 'tudelft' for production, 'dev' for a local SimpleSAMLphp test IdP
+        // on port 8081 (not included in this repository).
         'idp_profile' => 'tudelft',
 
         // Service provider key pair. Generate with:
@@ -102,8 +115,8 @@ return [
          * Which assertion attribute carries which piece of identity. Each list
          * is tried in order and the first one present wins, because the exact
          * names TU Delft releases are not known until the first real login.
-         * Check /admin/saml-debug after that login and correct this list; no
-         * code change is needed.
+         * Correct this list after that login; the plan is for stage 2 to show
+         * the attribute names it received, so that no code change is needed.
          */
         'attr_map' => [
             'netid' => [

@@ -7,5 +7,5 @@
 <section class="card narrow">
     <h1><?= e($status) ?></h1>
     <p><?= e($message) ?></p>
-    <p><a href="<?= e(path('/')) ?>">Back to the calendar</a></p>
+    <p><a href="<?= e(path('/')) ?>">Back to the start page</a></p>
 </section>

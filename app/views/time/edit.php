@@ -23,7 +23,7 @@ use Macrolab\Time\TimeRules;
         <input id="worked_on" name="worked_on" type="date" required data-echo
                value="<?= e($entry->workedOnDate()) ?>">
 
-        <label for="project_id">Project</label>
+        <label for="project_id">Activity</label>
         <select id="project_id" name="project_id" required>
             <?php foreach ($projects as $project): ?>
                 <option value="<?= e($project->id) ?>"

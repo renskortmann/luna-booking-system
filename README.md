@@ -1,23 +1,32 @@
 # Macrolab website
 
-A small web application for reserving time on the lab's instruments, built to
-run on TU Delft LAMP hosting.
+The web application of the TU Delft Macrolab, built to run on TU Delft LAMP
+hosting. It contains **two independent systems** behind one sign-in:
 
-Signing in lands on the **hub** at `/`, which is the front door to two
-unrelated systems: **booking** at `/booking` and **time registration** at
-`/time`. They share the sign-in and nothing else - time is logged against a
-project, never against a machine.
+| System | URL | Purpose |
+|---|---|---|
+| **Instrument booking** | `/booking` | Lab members reserve time on the lab's instruments. Each machine has a shared calendar; members book, change and cancel their own slots - and only their own. |
+| **Time registration** | `/time` | Lab technicians log the hours they spend on their activities - maintaining equipment, supporting teaching, tidying up the lab, and so on - so that lab management can see how technician time is distributed over those activities. |
 
-Lab members pick a machine there and book, change or cancel their own time
-slots on its shared calendar - and only their own. One administrator controls
-who may sign in at all, manages the list of machines, and can create, change or
-delete any booking.
+Both kinds of "time" appear, but they have nothing to do with each other:
+booking reserves an *instrument*, time registration records a person's *work*.
+The two systems share the sign-in, the allowlist of who may sign in, the page
+layout and the audit log - nothing else. No table, class or page of one refers
+to the other, and the code is split accordingly (`app/src/Booking/`,
+`app/src/Time/`; see [Layout](#layout)).
+
+Signing in lands on the **hub** at `/`, which links to both. One administrator
+controls who may sign in, manages the machines and the booking rules, can
+create, change or delete any booking, maintains the list of activities time is
+logged against, and reads what everyone has logged (see
+[Time registration](#time-registration)).
 
 - **Stage 1 (now):** members sign in with their netID and a password they set
   themselves through a single-use link from the administrator.
-- **Stage 2 (when TU Delft ICT registers the service provider):** members sign
-  in with TU Delft SSO. Accounts are keyed on netID in both stages, so the
-  switch is a setting, not a migration. See [the cutover](#stage-2-switching-to-tu-delft-sso).
+- **Stage 2 (planned, not built yet):** members sign in with TU Delft SSO.
+  Accounts are keyed on netID in both stages, so the switch will be a setting,
+  not a migration. The routes, database columns and setting are in place; the
+  SAML sign-in itself is not. See [the cutover](#stage-2-switching-to-tu-delft-sso).
 
 The administrator's own sign-in never goes through SSO, so the lab keeps access
 even when SSO is unavailable.
@@ -50,8 +59,9 @@ entering its username at `/login` fails with the same generic
 | Shell on the server | **Not needed.** Installation, migrations and day-to-day operation all happen in the browser |
 | Transport | HTTPS. The application redirects plain HTTP to the configured base URL |
 
-Everything else is vendored: the calendar library is served from this host, so
-the page needs no CDN and the content security policy can stay at `'self'`.
+Everything else is vendored: the booking calendar's JavaScript library is
+served from this host, so the page needs no CDN and the content security policy
+can stay at `'self'`.
 
 `sodium` is preferred for two reasons: it gives Argon2id password hashing, and
 it encrypts the administrator's TOTP secret. Without it the application falls
@@ -140,89 +150,123 @@ database you do not mind losing.
 
 ## Deploying to TU Delft LAMP hosting
 
+The site is deployed from GitHub with Plesk's Git extension, and its
+dependencies are installed with Plesk's PHP Composer extension. Neither needs a
+shell on the server. FTP is the fallback, described at the end.
+
 ### What that hosting gives you, and what follows from it
 
 | Offered | What it means here |
 |---|---|
 | Plesk panel, reachable **only from a campus network** | Deploy from campus or over eduVPN |
-| FTP, unlimited users | The upload channel. Use **FTPS** in your client - plain FTP sends the password in the clear |
-| **No SSH, no SFTP** | There is no command line. The schema and the administrator account are created in the browser, at `/install` |
+| **Git** extension | The deployment channel: Plesk pulls this repository from GitHub |
+| **PHP Composer** extension | Builds `vendor/` on the server from `composer.lock` |
+| **File Manager** | Where `app/config.php` is created and edited |
+| **No shell relied on** | Plesk lists an SSH access option, but whether it gives a usable shell is unverified, so nothing depends on one. The schema and the administrator account are created in the browser, at `/install` |
+| FTP, unlimited users | Only a fallback. Use **FTPS** - plain FTP sends the password in the clear |
 | 1000 MB webspace, 10 databases | Ample: this application plus its dependencies is a few MB, and it uses one database |
-| SSL available | Required. Get the certificate issued before you fix the base URL |
-| Git available | An alternative to FTP for updates - see below |
+| SSL available | Required. The application refuses plain HTTP |
 | **Mail not available** | Which is why this system sends none. Nothing here depends on it |
 | You are responsible for backups | Plesk can schedule them; nobody else will |
 
-**Composer never runs on the server.** You build the `vendor/` directory on
-your own machine and upload the result. Nothing in the application needs a
-shell on the server.
+### 1. Prepare the subscription in Plesk
 
-### 1. Prepare the upload on your own machine
+All of this is under **Websites & Domains** → your domain.
 
-```bash
-composer install --no-dev --optimize-autoloader
+- **PHP Settings**: PHP **8.2 or newer**, run as **FPM application served by
+  Apache**. The "served by nginx" variant ignores `.htaccess`, which the
+  routing and the deny rules depend on.
+- **Hosting Settings**: change the document root from `httpdocs` to
+  **`public_html`**, so it matches this repository's layout.
+- **Databases**: add a database and a database user with rights on that
+  database only. Write the name, user and password down in a password manager;
+  they go into `app/config.php` in step 4.
+
+### 2. Deploy the code with Plesk Git
+
+**Git** → *Create repository*:
+
+- **Remote repository**, with the GitHub URL of this repository. If the
+  repository is private, Plesk shows an SSH public key after creation: add it
+  in GitHub as a read-only **deploy key**, and use the SSH URL.
+- **Deployment mode: Manual.** *Automatic* needs GitHub to call a webhook on
+  the Plesk server, which is reachable from campus only.
+- **Deployment directory: `/`**, the subscription root - not `/httpdocs`.
+- Leave the *additional deployment actions* off: they run shell commands, which
+  this hosting does not allow.
+
+Then *Pull updates* and *Deploy now*. The subscription root ends up like this:
+
+```
+<subscription root>/
+    public_html/     <- the document root: index.php, .htaccess, assets/
+    app/             <- beside the document root, so unreachable over the web
+    vendor/          <- not in git; step 3 creates it
+    app/config.php   <- not in git; step 4 creates it
+    tests/ docs/ composer.json ...   harmless: outside the document root
 ```
 
-Then make a copy of `app/config.example.php` as `app/config.php` and fill in:
+`public_html/index.php` finds `app/` one level up by itself; there is nothing
+to configure. Plesk's original `httpdocs/` folder is no longer used and can be
+deleted once the site works.
+
+### 3. Build `vendor/` with Plesk PHP Composer
+
+**PHP Composer** on the domain dashboard. It finds `composer.json` in the
+subscription root. Choose **Mode: Production**, which leaves out the
+development packages, and click **Install**.
+
+Install uses the exact versions in `composer.lock`. **Never click Update** on
+the server: it ignores the lock file and picks new versions. Dependencies are
+changed on your own machine with `composer update`, and the new
+`composer.lock` is committed and deployed like any other change.
+
+### 4. Create `app/config.php`
+
+In **File Manager**, copy `app/config.example.php` to `app/config.php` and fill
+in:
 
 - `app.base_url` - the final HTTPS address, no trailing slash
-- `app.key` - run `php app/cli/generate-key.php` locally and paste the output
+- `app.key` - run `php app/cli/generate-key.php` on your own machine and paste
+  the output
 - `app.install_token` - run `php app/cli/generate-key.php` again and paste that
-  too; this is what protects `/install` during the minutes between upload and
-  installation
-- the `db` block - from Plesk, **Databases** → add a database and a database
-  user with rights on that database only
+  too; this is what protects `/install` between deployment and installation
+- the `db` block - host `localhost`, port `3306`, and the database name, user
+  and password from step 1. Quote values containing a hyphen.
 
-### 2. Choose the PHP version in Plesk
+Set the file's permissions to **600** (owner read/write only). `config.php` is
+not in git, and Plesk's deployment leaves untracked files alone, so later
+deployments do not touch it.
 
-**Websites & Domains** → your domain → **PHP Settings**. Choose **8.2 or
-newer**. If nothing that recent is offered, ask ICT before going further; the
-application will refuse to install on an older version, and the install page
-will tell you which version it found.
+Generate fresh values for every installation. Never reuse a key or token that
+has been pasted into a chat, an email or a ticket.
 
-### 3. Upload
+### 5. Get the HTTPS certificate
 
-The layout to aim for puts the application **beside** the document root rather
-than inside it, so the configuration and the SAML key are not web-reachable at
-all - no `.htaccess` rules involved:
-
-```
-<your FTP home>/
-    httpdocs/            <- the document root
-        index.php            (from public_html/index.php)
-        .htaccess            (from public_html/.htaccess)
-        assets/              (from public_html/assets/)
-    app/                 <- beside httpdocs, so unreachable over the web
-    vendor/
-```
-
-So: the **contents** of `public_html/` go into `httpdocs/`, and `app/` and
-`vendor/` go one level up, next to `httpdocs/`. `index.php` detects this
-arrangement by itself - there is nothing to configure and no need to change the
-document root.
-
-Then, in your FTP client, set the permissions on `app/config.php` to **600**
-(owner read/write only).
-
-**If your FTP account cannot write outside `httpdocs`**, put `app/` and
-`vendor/` inside it instead. `index.php` handles that too, but the protection
-of `app/` then rests entirely on `.htaccess`, so you must verify it:
+The hostname must resolve in DNS first. Records under `tudelft.nl` are managed
+by ICT, not by Plesk, so ask ICT for the record (an A record to the hosting
+server, or a CNAME to it) and wait until it resolves:
 
 ```bash
-curl -i https://<host>/app/config.php
+curl -s "https://dns.google/resolve?name=<host>&type=A"   # "Status": 0 with an "Answer"
 ```
 
-That must return 403 or 404 and never any content. If it returns the file,
-**stop**: replace the real database password with a placeholder, and ask ICT
-either to raise `AllowOverride` or to let you write beside `httpdocs`.
+Then **SSL/TLS Certificates** → *Let's Encrypt*. Untick the `www.` variant
+unless that name is in DNS too, or issuance fails.
 
-### 4. Install, in the browser
+Do not install before HTTPS works: `/install` sends the install token and the
+administrator's password, so never run it over a preview URL or a hosts-file
+override.
+
+### 6. Install, in the browser
 
 Open:
 
 ```
 https://<host>/install?token=<your install_token>
 ```
+
+URL-encode the token: a generated one may contain `/`, `+` or `=`.
 
 The page checks the server (PHP version, extensions, database connection,
 whether `app/` is web-reachable), then loads the schema and creates the
@@ -242,16 +286,24 @@ you are not locked out, but you cannot get the same QR code back:
    replaces the one you missed.
 
 It then stops existing: with an administrator account on file, `/install`
-returns 404. Afterwards, remove `install_token` from `app/config.php` and
-re-upload it.
+returns 404. Afterwards, blank `install_token` in `app/config.php` in File
+Manager.
 
-### 5. Check that pretty URLs work
+### 7. Check routing and the deny rules
 
-Visit `https://<host>/login`. If you get the sign-in page, routing works and
-you are done.
+Visit `https://<host>/login`. If you get the sign-in page, routing works.
+Then make sure the configuration is not served:
 
-If you get a 404 from the web server, the hosting is serving the site through
-nginx without honouring `.htaccess`. Two ways out:
+```bash
+curl -i https://<host>/app/config.php
+```
+
+That must return 403 or 404 and never any content. With the layout from step 2
+`app/` is outside the document root, so this is a check rather than a worry.
+
+If `/login` gives a 404 from the web server, the site is being served through
+nginx without honouring `.htaccess` - check the PHP setting from step 1 first.
+Two ways out if it stays that way:
 
 - **Plesk** → **Apache & nginx Settings** → *Additional nginx directives*:
   ```nginx
@@ -262,11 +314,11 @@ nginx without honouring `.htaccess`. Two ways out:
   location ^~ /vendor/ { deny all; }
   ```
 - Or avoid rewriting altogether: set `app.base_url` to
-  `https://<host>/index.php` and re-upload the config. Every link the
-  application generates then goes through `/index.php/...`, which needs no
-  rewrite rules at all. Slightly uglier URLs, nothing else changes.
+  `https://<host>/index.php`. Every link the application generates then goes
+  through `/index.php/...`, which needs no rewrite rules at all. Slightly
+  uglier URLs, nothing else changes.
 
-### 6. Housekeeping
+### 8. Housekeeping
 
 **Plesk** → **Scheduled Tasks** → add a task, type *Run a PHP script*, script
 path `app/cli/prune.php`, daily. That trims the audit log to the retention
@@ -274,19 +326,29 @@ window and clears spent invite links. Nothing breaks if you skip it; the
 database just grows slowly.
 
 Also set up **Plesk** → **Backup Manager**, since backups are your
-responsibility. The database is the part that matters - the files can be
-re-uploaded from this repository at any time.
+responsibility. The database is the part that matters - the code can be
+deployed again from this repository at any time, but `app/config.php` cannot,
+so include it or keep its values in a password manager.
 
-### Updating later: FTP or Plesk Git
+### Updating later
 
-**FTP** is the simple path: rebuild `vendor/` locally if the dependencies
-changed, upload the files that changed, and if the update brings a database
-migration, apply it from **Administration** → **System** → *Apply migrations*.
-That page is behind your own sign-in, so it needs no install token and stays
-available for the life of the installation.
+1. Push the change to GitHub.
+2. In Plesk (on campus or eduVPN): **Git** → *Pull updates*, then *Deploy now*.
+3. If `composer.lock` changed, run **Install** again in **PHP Composer**. Do
+   the same after a release that adds or moves classes under `app/src/`: it
+   refreshes the optimised class map. (Classes missing from the map are still
+   found by their folder, so the site keeps working in the meantime.)
+4. If the release adds a database migration, apply it from
+   **Administration** → **System** → *Apply migrations*. That page is behind
+   your own sign-in, so it needs no install token and stays available for the
+   life of the installation.
 
-**Plesk Git** avoids hand-uploading. Because Composer cannot run on the server,
-the branch you deploy must contain `vendor/`, which the main branch does not:
+A deployment never overwrites `app/config.php` or `vendor/`.
+
+### Fallbacks
+
+**If the PHP Composer extension is unavailable**, deploy a branch that
+contains `vendor/` instead of `main`:
 
 ```bash
 git checkout -b deploy
@@ -296,11 +358,20 @@ git commit -m "Deploy build"
 git push origin deploy
 ```
 
-Then, in Plesk, add the repository, choose the `deploy` branch, and set the
-deployment path to your FTP home so that `httpdocs/`, `app/` and `vendor/` land
-where they belong - which means the deploy branch should also have the contents
-of `public_html/` moved to `httpdocs/`. Note that Plesk's *additional deployment
-actions* run shell commands and are therefore not available here.
+and choose the `deploy` branch in Plesk Git. Rebuild and push it for every
+release.
+
+**If Git is unavailable**, upload over FTPS instead: build `vendor/` locally
+with `composer install --no-dev --optimize-autoloader`, then upload
+`public_html/`, `app/` and `vendor/` into the layout from step 2.
+
+**If the document root cannot be moved and nothing can be written beside it**,
+put `app/` and `vendor/` inside the document root, next to `index.php`.
+`index.php` handles that layout too, but the protection of `app/` then rests
+entirely on `.htaccess`, so the check in step 7 becomes essential. If
+`/app/config.php` returns the file, **stop**: replace the real database
+password with a placeholder, and ask ICT either to raise `AllowOverride` or to
+let you write beside the document root.
 
 ## Running it
 
@@ -322,7 +393,8 @@ a new one, so a link that never arrives cannot lock them out.
 
 **Suspend** blocks sign-in immediately - including in the middle of a session,
 because the allowlist is checked on every request - and keeps the person's
-booking history. **Remove** is only offered when they have no bookings at all.
+bookings and registered time. **Remove** is only offered when they have no
+bookings and no registered time at all.
 
 ### Booking rules
 
@@ -334,8 +406,8 @@ everyone, including you.
 
 ### Audit log
 
-Every booking change, allowlist change, settings change and sign-in - including
-refused ones - is recorded with who, when and from which address. Entries are
+Every booking change, time entry change, activity change, allowlist change,
+settings change and sign-in - including refused ones - is recorded with who, when and from which address. Entries are
 kept for the number of days set in the rules (365 by default) and pruned by
 `app/cli/prune.php`.
 
@@ -351,16 +423,27 @@ through the database. In Plesk, **Databases** → **phpMyAdmin**, then:
 DELETE FROM admin_account;   -- admin_recovery_codes cascades with it
 ```
 
-Put an `install_token` back into `app/config.php`, re-upload it, and open
-`/install` again to create the account afresh. Bookings, users and the audit
-log are untouched.
+Put an `install_token` back into `app/config.php` (File Manager), and open
+`/install` again to create the account afresh. Bookings, time entries, users
+and the audit log are untouched.
 
 ## Stage 2: switching to TU Delft SSO
+
+> **Status: not implemented yet.** This version has the groundwork - the
+> reserved `/auth/saml/*` routes (they answer 404 for now), the
+> `users.saml_name_id` column, the sign-in mode setting, the `saml` block in
+> `app/config.example.php` and `app/cli/purge-local-passwords.php` - but no
+> SAML provider. Until one exists (`Macrolab\Auth\SamlProvider`, built on the
+> already-required `onelogin/php-saml`), the settings page offers password
+> sign-in only, and a stored SSO mode is ignored, so nobody can be locked out.
+> The runbook below is the plan for when it is built.
 
 1. Send ICT the request in [docs/ICT-REQUEST.md](docs/ICT-REQUEST.md). Do this
    early - registration takes time, and nothing else in the build waits on it.
 2. Generate the service provider key pair **on your own machine** and upload
-   the two files to `app/secrets/` by FTP, setting `sp.key` to permissions 600:
+   the two files to `app/secrets/` with Plesk File Manager (or FTPS), setting
+   `sp.key` to permissions 600. They are not in git, so deployments leave them
+   alone:
    ```bash
    openssl req -x509 -newkey rsa:3072 -nodes -days 3650 \
        -keyout app/secrets/sp.key -out app/secrets/sp.crt -subj "/CN=<host>"
@@ -372,12 +455,13 @@ log are untouched.
    `saml.profiles.tudelft.x509cert` in `app/config.php`. Take it from that URL
    yourself; do not accept a copy from anywhere else.
 4. Set **Sign-in mode** to *Either password or TU Delft SSO* and sign in with a
-   real netID. Check `/admin/saml-debug`: it lists the attribute names the
-   assertion actually carried. If the netID did not arrive under `uid`, add the
-   name you see to `saml.attr_map.netid` - configuration, not code.
+   real netID. Check which attribute names the assertion actually carried
+   (stage 2 is meant to include a debug page for this). If the netID did not
+   arrive under `uid`, add the name you see to `saml.attr_map.netid` -
+   configuration, not code.
 5. Confirm that an SSO sign-in lands on the **existing** account, with its
-   bookings intact, and that a netID which is not on the allowlist is still
-   refused.
+   bookings and time entries intact, and that a netID which is not on the
+   allowlist is still refused.
 6. Set **Sign-in mode** to *TU Delft SSO only*. Password sign-in for lab
    members is then refused and logged. Your own sign-in is unaffected.
 7. Once you are satisfied, clear the unused password hashes. With a shell:
@@ -399,23 +483,36 @@ re-register.
 
 ## Notes on the design
 
+Shared by both systems:
+
 - **Times.** Every timestamp is stored in UTC and rendered in
-  `app.display_timezone`. Opening hours are compared in local wall-clock time,
-  which is what "between 08:00 and 18:00" means, so the March and October DST
-  transitions cannot produce an ambiguous booking.
+  `app.display_timezone`. The one exception is the day a time entry is for,
+  which is a plain calendar date and never shifted by a timezone.
+- **The allowlist gate** lives in `Auth::signIn()`, not in an authentication
+  provider, so it cannot be bypassed by a bug in one provider and does not have
+  to be reimplemented when SSO is added.
+- **Authorisation.** Every write re-loads the record it changes and asks the
+  system's policy - `BookingPolicy` or `TimeEntryPolicy` - whether this person
+  may change it. A request naming somebody else's booking or time entry is
+  refused with 403, whatever the interface offered.
+- **Sessions** end after 24 idle minutes, for members and the administrator
+  alike. That is the session lifetime of the TU Delft hosting, which deletes
+  older session files and does not let the subscription change it, so the idle
+  limits in `app/config.php` are set to match rather than promise more.
+- **Personal data** is limited to netID, display name and email address, plus
+  each person's own bookings, their own time entries (with their notes) and
+  the audit log. No email is sent and the application makes no outbound
+  connections of any kind.
+
+Instrument booking:
+
+- **Opening hours** are compared in local wall-clock time, which is what
+  "between 08:00 and 18:00" means, so the March and October DST transitions
+  cannot produce an ambiguous booking.
 - **Overlaps.** Each booking write takes a row lock on the machine first, so
   two requests cannot both find a slot free and then both fill it. Intervals
   are half-open: a booking ending at 10:00 and one starting at 10:00 do not
   clash.
-- **Authorisation.** Every write re-loads the booking and asks
-  `BookingPolicy::canModify()`. A request naming somebody else's booking id is
-  refused with 403, whatever the interface offered.
-- **The allowlist gate** lives in `Auth::signIn()`, not in an authentication
-  provider, so it cannot be bypassed by a bug in one provider and does not have
-  to be reimplemented when SSO is added.
-- **Personal data** is limited to netID, display name and email address, plus
-  each person's own bookings and the audit log. No email is sent and the
-  application makes no outbound connections of any kind.
 
 ## Machines
 
@@ -436,24 +533,37 @@ machine, so filling up one instrument does not lock anybody out of the others.
 
 ## Time registration
 
-Employees log the hours they worked at `/time`: a day, a project, a duration
-and an optional note. Hours can be typed as `3.5`, `3,5`, `3:30` or `3h30`, and
-are stored as whole minutes, so nothing is lost to rounding.
+Lab management wants to know how the lab technicians divide their time over
+their activities: maintaining equipment, supporting teaching, tidying up the
+lab, and so on. All of these fall under the general lab code. Time
+registration collects exactly that. Technicians log the hours they spent at
+`/time`: a day, an activity, a duration and an optional note. Hours can be typed as `3.5`, `3,5`, `3:30` or `3h30`, and are stored as
+whole minutes, so nothing is lost to rounding.
 
-**This system is not connected to the booking system.** A time entry names a
-project and never a machine. The two halves share the sign-in and nothing else,
-which is deliberate: hours are booked to work, not to equipment.
+The screens say **activities**, but the code, the database, the URL
+`/admin/projects` and the audit log action names still say **projects**
+(`Project`, `projects` table, `project_added`). They are the same thing. The
+administrator keeps the list at `/admin/projects`, and every entry names one
+activity, with an optional code of its own. There are no roles, so any signed-in member can open `/time`; who is expected
+to register time is a lab arrangement, not something the application enforces.
+
+**This system is not connected to the booking system.** A time entry names an
+activity and never a machine. The two halves share the sign-in and nothing else,
+which is deliberate: hours are booked to work, not to equipment. Time spent
+maintaining an instrument is logged against a maintenance activity, not against
+that instrument's calendar.
 
 Employees own their entries and can change or remove their own at any time -
 and only their own. A request naming somebody else's entry is refused with 403
 and recorded, the same discipline the bookings use.
 
-The administrator maintains the project list at `/admin/projects` and reads
-what everyone has logged at `/admin/time`, filtered by person, project and date
-range, with a CSV export of exactly those rows. That view is **read-only**:
+The administrator maintains the activity list at `/admin/projects` and reads
+what everyone has logged at `/admin/time`, filtered by person, activity and
+date range, with a CSV export of exactly those rows (columns `date`, `netid`,
+`name`, `activity`, `activity_code`, `hours`, `minutes`, `note`, `entry_id`). That view is **read-only**:
 there is no approval step, and nobody edits somebody else's timesheet.
 
-A project with time on record cannot be deleted, only retired - the same
+An activity with time on record cannot be deleted, only retired - the same
 reasoning as retiring a machine. For the same reason, an account with time
 registered cannot be removed from the allowlist, only suspended.
 
@@ -474,33 +584,58 @@ tokens; hours are a business record.
 
 ```
 public_html/index.php        the only reachable PHP file; everything is routed
-public_html/.htaccess        routing, deny rules, security headers
+public_html/.htaccess        routing, deny rules, caching (security headers: Bootstrap)
 public_html/assets/          stylesheet, script, vendored FullCalendar
 app/config.php               local configuration (gitignored)
-app/routes.php               the whole route table
-app/src/                     the application - see the class list below
-app/views/                   plain PHP templates
-app/migrations/              schema
+app/routes.php               the whole route table, one section per system
+app/src/                     shared: sign-in, sessions, database, views, audit
+app/src/Booking/             instrument booking (namespace Macrolab\Booking)
+app/src/Time/                time registration (namespace Macrolab\Time)
+app/src/Controller/          the HTTP handlers for both, named after their system
+app/views/                   plain PHP templates; time registration in views/time/
+app/migrations/              schema; 002 onwards adds time registration
 app/cli/                     migrate, create-admin, generate-key, prune
 docs/ICT-REQUEST.md          the SSO registration request to send ICT
 tests/                       unit tests, database tests, concurrency probe
 ```
 
+Classes in `Macrolab\Booking` never use classes in `Macrolab\Time`, and the
+other way round. Both may use the shared classes in `Macrolab\`.
+
+Shared (`app/src/`):
+
 | Class | What it is for |
 |---|---|
 | `Auth`, `Actor` | who is signed in; the allowlist gate |
 | `Auth\LocalProvider` | stage 1 password sign-in |
-| `Auth\ProviderInterface` | the seam TU Delft SSO slots into |
+| `Auth\ProviderInterface` | the seam TU Delft SSO will slot into (stage 2, not built yet) |
 | `Invite` | single-use links for setting a password |
 | `AdminAuth`, `Crypto` | the administrator's password and one-time codes |
-| `BookingRules`, `RuleSet` | the rules, as pure functions |
+| `Navigation` | the one list of destinations, shared by the hub and the top bar |
+| `Settings` | what the administrator sets in the web UI: both systems' rules, the sign-in mode |
+| `Clock` | UTC storage, display timezone, durations in words |
+| `Audit`, `RateLimit` | the record, and login throttling |
+
+Instrument booking (`app/src/Booking/`):
+
+| Class | What it is for |
+|---|---|
+| `Resources` | the machines that can be booked |
+| `Booking`, `Bookings` | one booking, and the queries that find them |
+| `BookingRules`, `RuleSet` | the booking rules, as pure functions |
 | `BookingService` | writes, with the lock and the overlap check |
 | `BookingPolicy` | who may change which booking |
-| `Navigation` | the one list of destinations, shared by the hub and the top bar |
+
+Time registration (`app/src/Time/`):
+
+| Class | What it is for |
+|---|---|
+| `Project`, `Projects` | the activities time is logged against ("activities" on screen) |
+| `TimeEntry`, `TimeEntries` | one entry, and the queries that find them |
 | `TimeRules`, `TimeRuleSet` | the time rules and the hour/date parsing, as pure functions |
 | `TimeEntryService` | time writes, with the daily cap and the audit entry |
 | `TimeEntryPolicy` | who may change which time entry - the admin may not |
-| `Projects` | the project list time is logged against |
 | `TimeFilter` | one filter behind the admin table, its totals and the export |
-| `Csv` | the export, quoted and safe to open in a spreadsheet |
-| `Audit`, `RateLimit` | the record, and login throttling |
+
+`Csv` (shared) writes the time export, quoted and safe to open in a
+spreadsheet.

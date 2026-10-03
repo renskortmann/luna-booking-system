@@ -8,8 +8,10 @@ declare(strict_types=1);
  *   php app/cli/migrate.php            apply pending migrations
  *   php app/cli/migrate.php --status   list what is applied and what is pending
  *
- * No shell on the server? Use the browser installer at /install instead - it
- * does exactly the same thing. See README.md.
+ * No shell on the server (the TU Delft hosting has none)? The first install
+ * loads the schema at /install; later migrations are applied from
+ * Administration -> System. Both do exactly what this script does.
+ * See README.md.
  */
 
 use Macrolab\Config;

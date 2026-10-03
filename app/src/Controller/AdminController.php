@@ -796,13 +796,13 @@ final class AdminController
     /**
      * The browser installer: loads the schema and creates the administrator.
      *
-     * TU Delft LAMP hosting gives no SSH and no SFTP - only FTP and the Plesk
-     * panel - so this, not the command line, is the normal way to install.
+     * The TU Delft hosting is operated through the Plesk panel without a
+     * shell, so this, not the command line, is the normal way to install.
      *
      * Two things keep it from being a way in:
-     *   - it requires app.install_token, which the operator sets in
-     *     app/config.php before uploading, closing the window between upload
-     *     and installation;
+     *   - it requires app.install_token, which the operator sets when creating
+     *     app/config.php, before the site is reachable over HTTPS, closing the
+     *     window between deployment and installation;
      *   - it stops existing the moment an administrator account exists.
      */
     public function install(Request $request): Response
@@ -878,7 +878,7 @@ final class AdminController
         }
 
         return View::page('admin/install', [
-            'title'    => 'Install the booking system',
+            'title'    => 'Install the Macrolab website',
             'error'    => $error,
             'minimum'  => Config::int('auth.password_min_length', 12),
             'checks'   => Environment::checks(),
