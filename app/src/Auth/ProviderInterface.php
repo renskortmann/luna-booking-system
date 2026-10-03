@@ -10,10 +10,11 @@ use Macrolab\Http\Response;
 /**
  * The seam between "how someone proved who they are" and everything else.
  *
- * LocalProvider (stage 1) renders a password form; SamlProvider (stage 2)
- * redirects to login.tudelft.nl. Neither decides whether the person is allowed
- * in - that check lives in Auth::signIn() and is written exactly once, which is
- * what makes the SSO cutover a configuration change.
+ * LocalProvider (stage 1) renders a password form. A SamlProvider (stage 2,
+ * not built yet) will redirect to login.tudelft.nl; Settings::ssoAvailable()
+ * looks for that class. Neither decides whether the person is allowed in -
+ * that check lives in Auth::signIn() and is written exactly once, which is
+ * what will make the SSO cutover a configuration change.
  */
 interface ProviderInterface
 {

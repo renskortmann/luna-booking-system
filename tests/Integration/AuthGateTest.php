@@ -8,6 +8,7 @@ use Macrolab\Auth;
 use Macrolab\Auth\AccessDeniedException;
 use Macrolab\Auth\Identity;
 use Macrolab\Db;
+use Macrolab\Settings;
 use Macrolab\Users;
 
 /**
@@ -118,6 +119,23 @@ final class AuthGateTest extends DatabaseTestCase
 
         self::assertNull(Auth::user());
         self::assertFalse(Auth::isAdmin());
+    }
+
+    /**
+     * Stage 2 is not built, so a stored SSO mode must not switch off password
+     * sign-in: that would lock out every lab member with nothing in its place.
+     */
+    public function testAStoredSsoModeIsIgnoredWhileSsoIsNotAvailable(): void
+    {
+        self::assertFalse(Settings::ssoAvailable(), 'this test assumes stage 2 is not built yet');
+
+        foreach (['saml', 'both'] as $mode) {
+            Settings::set('auth_mode', $mode);
+
+            self::assertSame('local', Settings::authMode(), $mode . ' is ignored');
+            self::assertTrue(Settings::localLoginEnabled(), 'password sign-in stays on under ' . $mode);
+            self::assertFalse(Settings::samlLoginEnabled(), 'no SSO button under ' . $mode);
+        }
     }
 
     private function auditCount(string $action): int

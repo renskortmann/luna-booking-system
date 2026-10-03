@@ -545,8 +545,10 @@ final class AdminController
 
         return View::page('admin/settings', [
             'title'    => 'Rules',
-            'settings' => Settings::all(),
-            'error'    => $error,
+            'settings'     => Settings::all(),
+            'authMode'     => Settings::authMode(),
+            'ssoAvailable' => Settings::ssoAvailable(),
+            'error'        => $error,
         ], $error !== null ? 400 : 200);
     }
 
@@ -635,12 +637,12 @@ final class AdminController
             throw new RuntimeException('Unknown sign-in mode.');
         }
 
-        // Stage 2 is not wired up yet; refusing here prevents locking every
-        // lab member out by selecting a mode the code cannot honour.
-        if ($mode !== 'local' && !Config::get('saml.profiles')) {
+        // Stage 2 is not built yet; refusing here prevents locking every lab
+        // member out by selecting a mode the code cannot honour.
+        if ($mode !== 'local' && !Settings::ssoAvailable()) {
             throw new RuntimeException(
-                'TU Delft SSO is not configured yet, so only "local" can be selected. '
-                . 'See docs/ICT-REQUEST.md.'
+                'TU Delft SSO is not available in this version of the application yet, '
+                . 'so only password sign-in can be selected.'
             );
         }
 

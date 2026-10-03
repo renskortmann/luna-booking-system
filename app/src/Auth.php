@@ -236,7 +236,7 @@ final class Auth
     {
         $idle = Config::int(
             $kind === 'admin' ? 'auth.admin_session_idle_minutes' : 'auth.user_session_idle_minutes',
-            $kind === 'admin' ? 30 : 480
+            24 // the host's session lifetime; see app/config.example.php
         );
         $absolute = Config::int(
             $kind === 'admin' ? 'auth.admin_session_absolute_minutes' : 'auth.user_session_absolute_minutes',

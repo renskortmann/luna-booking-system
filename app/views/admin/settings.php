@@ -1,6 +1,8 @@
 <?php
 /**
  * @var array<string, string> $settings
+ * @var string                $authMode      the mode in effect, see Settings::authMode()
+ * @var bool                  $ssoAvailable
  * @var string|null           $error
  */
 
@@ -117,16 +119,22 @@ $timeField = static function (string $name, string $selected) use ($times): stri
                                  'both'  => 'Either password or TU Delft SSO (cutover)',
                                  'saml'  => 'TU Delft SSO only'] as $value => $label): ?>
                     <option value="<?= e($value) ?>"
-                        <?= ($settings['auth_mode'] ?? 'local') === $value ? 'selected' : '' ?>>
+                        <?= $authMode === $value ? 'selected' : '' ?>
+                        <?= $value !== 'local' && !$ssoAvailable ? 'disabled' : '' ?>>
                         <?= e($label) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
 
             <p class="muted small">
-                TU Delft SSO can only be selected once the service provider has
-                been registered with ICT and configured. Your own sign-in is
-                never affected by this setting.
+                <?php if ($ssoAvailable): ?>
+                    TU Delft SSO works only once the service provider has been
+                    registered with ICT and configured.
+                <?php else: ?>
+                    TU Delft SSO is planned but not yet available in this version
+                    of the application, so lab members sign in with a password.
+                <?php endif; ?>
+                Your own sign-in is never affected by this setting.
             </p>
 
             <label for="audit_retention_days">Keep audit log entries for (days)</label>

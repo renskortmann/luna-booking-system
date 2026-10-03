@@ -127,11 +127,32 @@ final class Settings
         self::$cache = null;
     }
 
+    /**
+     * The sign-in mode in effect. While TU Delft SSO is not available it is
+     * always 'local', whatever is stored: a stored 'saml' would otherwise switch
+     * off password sign-in with nothing to replace it, locking out every lab
+     * member.
+     */
     public static function authMode(): string
     {
         $mode = self::get('auth_mode');
 
+        if (!self::ssoAvailable()) {
+            return 'local';
+        }
+
         return in_array($mode, ['local', 'saml', 'both'], true) ? $mode : 'local';
+    }
+
+    /**
+     * Whether this version of the application can sign anyone in through TU
+     * Delft SSO. Stage 2 is not built yet: the routes, the database columns and
+     * this setting are in place, but there is no SAML provider. This turns true
+     * by itself once Auth\SamlProvider exists.
+     */
+    public static function ssoAvailable(): bool
+    {
+        return class_exists(Auth\SamlProvider::class);
     }
 
     public static function localLoginEnabled(): bool

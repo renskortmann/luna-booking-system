@@ -62,9 +62,13 @@ return [
     ],
 
     'auth' => [
-        'user_session_idle_minutes'      => 480,
+        // Idle limits stay within the host's session lifetime: the TU Delft
+        // hosting deletes session files after 24 idle minutes
+        // (session.gc_maxlifetime = 1440), and the subscription cannot change
+        // that, so a longer idle limit here would not hold anyway.
+        'user_session_idle_minutes'      => 24,
         'user_session_absolute_minutes'  => 720,
-        'admin_session_idle_minutes'     => 30,
+        'admin_session_idle_minutes'     => 24,
         'admin_session_absolute_minutes' => 480,
 
         // Single-use invite / reset links.
