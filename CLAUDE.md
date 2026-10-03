@@ -141,7 +141,11 @@ server-side. So it says nothing about what real visitors' addresses look like
   2026-10-03) offers no field for `gc_maxlifetime` and no "additional
   directives" box, so the subscription cannot raise it. Decision (2026-10-03):
   accept it. The idle limits (`auth.*_session_idle_minutes`) are 24 for members
-  and the admin, so the app's rule and the host's cleanup agree. The server's
+  and the admin, so the app's rule and the host's cleanup agree. The host's
+  cleanup is coarse (a session was still alive after 28 idle minutes), so the
+  app's own check is what enforces the limit. That check never fired until
+  2026-10-03: `Session::start()` refreshed "last seen" on every read, before
+  `isAlive()` compared it (fixed; covered by `AuthGateTest`). The server's
   `app/config.php` was created with the old 480/30 values: change them to 24.
 
 ### Database (created 2026-10-02)
@@ -195,8 +199,17 @@ To do:
    (with `NO_ENGINE_SUBSTITUTION`), and migration 003 (`ALTER TABLE`, drop
    index) ran during `/install`, so the user has the rights migrations need.
    SSH: forbidden (verified 2026-10-03). CGI unticked in Hosting Settings
-   (unused). Still to look at in Plesk: nginx proxy/static settings, where PHP
-   errors are logged.
+   (unused). PHP errors: the app's `error_log()` lines appear in Plesk ->
+   Logs, Apache error log, as `AH01071: Got error 'PHP message: [macrolab]
+   unhandled: ...'` (search for `[macrolab]`; verified 2026-10-03 with the
+   pre-install "table doesn't exist" errors). nginx (Apache & nginx Settings,
+   checked 2026-10-03): proxy mode on, smart static files processing on,
+   "serve static files directly by nginx" OFF - keep it off, or `.htaccess`
+   deny and caching rules stop applying to those extensions (verified: the
+   7-day cache header on `/assets/app.css` comes from `.htaccess`). nginx
+   caching OFF - keep it off, pages are per signed-in user. Body limit 128 MB
+   (PHP's 16 MB applies first). nginx adds `X-Powered-By: PleskLin`, which
+   `.htaccess` cannot remove; cosmetic.
    **Web Application Firewall: settled 2026-10-03.** ModSecurity 3.0 with
    the Comodo (free) rule set on nginx, mode **On** (it blocks scanners trying
    `/.env` and `/.git/config`). Rule **243420** ("Information disclosure
@@ -213,7 +226,12 @@ To do:
    user's own network** (Claude runs in WSL on the same public IP): a ban locks
    the user out of the site and Plesk.
 5. After 25 idle minutes, a reload must ask to sign in again.
-6. Delete the unused `httpdocs/` folder.
+6. `httpdocs/` (Plesk's original document root: default `index.html`,
+   `cgi-bin/`, and a `.well-known/` from the failed 2026-10-01 certificate
+   attempt) is unused. Rename it to `httpdocs.unused` rather than delete it
+   straight away, and delete it after the first automatic certificate renewal
+   (around early December 2026) has succeeded - in case renewal still looks
+   for `.well-known/` there. If renewal fails, rename it back and renew.
 
 ## Updates after go-live
 
