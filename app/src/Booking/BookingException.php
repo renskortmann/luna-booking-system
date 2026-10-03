@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Booking;
 
 use RuntimeException;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Time;
 
 /**
  * Something time is booked against. Deliberately unrelated to a machine: the

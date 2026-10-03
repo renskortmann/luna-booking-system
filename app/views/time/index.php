@@ -6,19 +6,19 @@
  * /api/time/cell when a cell in it is left (see wireDaySheet() in app.js), so
  * there is no submit button.
  *
- * @var \DateTimeImmutable                                              $day
- * @var string                                                          $dayLabel   "Friday - 18/09/2026"
- * @var string                                                          $prevDay
- * @var string                                                          $nextDay
- * @var bool                                                            $isWeekend
- * @var bool                                                            $isOpen     inside the logging window
- * @var list<array{project: \Macrolab\Project, entry: \Macrolab\TimeEntry|null}> $rows
- * @var \Macrolab\TimeRuleSet                                           $rules
- * @var array<string, mixed>                                            $month      see TimeController::monthData()
+ * @var \DateTimeImmutable                                                                 $day
+ * @var string                                                                             $dayLabel   "Friday - 18/09/2026"
+ * @var string                                                                             $prevDay
+ * @var string                                                                             $nextDay
+ * @var bool                                                                               $isWeekend
+ * @var bool                                                                               $isOpen     inside the logging window
+ * @var list<array{project: \Macrolab\Time\Project, entry: \Macrolab\Time\TimeEntry|null}> $rows
+ * @var \Macrolab\Time\TimeRuleSet                                                         $rules
+ * @var array<string, mixed>                                                               $month      see TimeController::monthData()
  */
 
 use Macrolab\Csrf;
-use Macrolab\TimeRules;
+use Macrolab\Time\TimeRules;
 use Macrolab\View;
 ?>
 <section class="card">

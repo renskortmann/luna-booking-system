@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Time;
+
+use Macrolab\Settings;
 
 /**
  * The time registration rules, resolved once and passed around as a value.

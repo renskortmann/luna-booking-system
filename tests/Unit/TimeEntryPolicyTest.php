@@ -7,8 +7,8 @@ namespace Macrolab\Tests\Unit;
 use DateTimeImmutable;
 use DateTimeZone;
 use Macrolab\Actor;
-use Macrolab\TimeEntry;
-use Macrolab\TimeEntryPolicy;
+use Macrolab\Time\TimeEntry;
+use Macrolab\Time\TimeEntryPolicy;
 use Macrolab\User;
 use PHPUnit\Framework\TestCase;
 

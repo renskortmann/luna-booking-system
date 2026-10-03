@@ -3,17 +3,17 @@
  * The administrator's read-only view of what everyone has logged.
  *
  * Read-only on purpose: there is no approval step, and nobody edits somebody
- * else's timesheet. See Macrolab\TimeEntryPolicy.
+ * else's timesheet. See Macrolab\Time\TimeEntryPolicy.
  *
- * @var \Macrolab\TimeFilter                       $filter
- * @var list<\Macrolab\TimeEntry>                  $entries
+ * @var \Macrolab\Time\TimeFilter                  $filter
+ * @var list<\Macrolab\Time\TimeEntry>             $entries
  * @var array{entries: int, minutes: int}          $totals
  * @var list<array{project: string, minutes: int}> $byProject
  * @var list<array<string, mixed>>                 $people
- * @var list<\Macrolab\Project>                    $projects
+ * @var list<\Macrolab\Time\Project>               $projects
  */
 
-use Macrolab\TimeRules;
+use Macrolab\Time\TimeRules;
 ?>
 <section class="card">
     <h1>Time overview</h1>

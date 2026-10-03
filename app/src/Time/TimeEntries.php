@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Time;
 
 use DateTimeImmutable;
+use Macrolab\Db;
 
 /**
  * Every query against the `time_entries` table.

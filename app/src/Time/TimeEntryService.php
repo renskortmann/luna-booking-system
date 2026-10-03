@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Time;
 
 use DateTimeImmutable;
+use Macrolab\Actor;
+use Macrolab\Audit;
+use Macrolab\Clock;
+use Macrolab\Db;
 use Macrolab\Http\HttpException;
 use PDOException;
 use RuntimeException;

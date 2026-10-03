@@ -1,10 +1,10 @@
 <?php
 /**
- * @var \Macrolab\User            $user
- * @var list<\Macrolab\Booking>   $bookings
- * @var bool                  $canChange
- * @var int                   $minimum
- * @var string|null           $error
+ * @var \Macrolab\User                  $user
+ * @var list<\Macrolab\Booking\Booking> $bookings
+ * @var bool                            $canChange
+ * @var int                             $minimum
+ * @var string|null                     $error
  */
 
 use Macrolab\Clock;

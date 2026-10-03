@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Time;
 
 use DateTimeImmutable;
 use Macrolab\Http\Request;

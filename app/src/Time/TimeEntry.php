@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Time;
 
 use DateTimeImmutable;
+use Macrolab\Clock;
 
 /**
  * One person's hours on one project on one calendar day.

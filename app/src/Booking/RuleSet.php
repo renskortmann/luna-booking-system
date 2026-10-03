@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Booking;
 
 use DateTimeZone;
+use Macrolab\Config;
+use Macrolab\Settings;
 
 /**
  * A snapshot of the booking rules. Passed explicitly into BookingRules so that

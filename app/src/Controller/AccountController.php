@@ -6,7 +6,7 @@ namespace Macrolab\Controller;
 
 use Macrolab\Audit;
 use Macrolab\Auth;
-use Macrolab\Bookings;
+use Macrolab\Booking\Bookings;
 use Macrolab\Config;
 use Macrolab\Csrf;
 use Macrolab\Http\Request;

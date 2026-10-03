@@ -10,12 +10,12 @@ use Macrolab\Actor;
 use Macrolab\Clock;
 use Macrolab\Db;
 use Macrolab\Http\HttpException;
-use Macrolab\Project;
-use Macrolab\Projects;
-use Macrolab\TimeEntries;
-use Macrolab\TimeEntry;
-use Macrolab\TimeEntryException;
-use Macrolab\TimeEntryService;
+use Macrolab\Time\Project;
+use Macrolab\Time\Projects;
+use Macrolab\Time\TimeEntries;
+use Macrolab\Time\TimeEntry;
+use Macrolab\Time\TimeEntryException;
+use Macrolab\Time\TimeEntryService;
 use Macrolab\User;
 use Macrolab\Users;
 

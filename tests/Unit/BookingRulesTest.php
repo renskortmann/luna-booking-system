@@ -6,8 +6,8 @@ namespace Macrolab\Tests\Unit;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Macrolab\BookingRules;
-use Macrolab\RuleSet;
+use Macrolab\Booking\BookingRules;
+use Macrolab\Booking\RuleSet;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -342,16 +342,8 @@ final class BookingRulesTest extends TestCase
         self::assertNull(BookingRules::changeNoticeError($rules, $start, $now));
     }
 
-    public function testHumanReadableHelpers(): void
+    public function testHumanReadableDays(): void
     {
-        self::assertSame('30 minutes', BookingRules::humanDuration(30));
-        self::assertSame('1 hour', BookingRules::humanDuration(60));
-        self::assertSame('4 hours', BookingRules::humanDuration(240));
-        self::assertSame('2 hours 30 minutes', BookingRules::humanDuration(150));
-        self::assertSame('1 day', BookingRules::humanDuration(24 * 60));
-        self::assertSame('3 days', BookingRules::humanDuration(3 * 24 * 60));
-        // Not a round number of days, so it stays in hours.
-        self::assertSame('25 hours', BookingRules::humanDuration(25 * 60));
         self::assertSame('Monday', BookingRules::humanDays([1]));
         self::assertSame('Monday and Friday', BookingRules::humanDays([1, 5]));
         self::assertSame('Monday, Wednesday and Friday', BookingRules::humanDays([1, 3, 5]));

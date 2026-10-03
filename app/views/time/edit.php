@@ -1,13 +1,13 @@
 <?php
 /**
- * @var \Macrolab\TimeEntry     $entry
- * @var list<\Macrolab\Project> $projects
- * @var \Macrolab\TimeRuleSet   $rules
- * @var string|null             $error
+ * @var \Macrolab\Time\TimeEntry     $entry
+ * @var list<\Macrolab\Time\Project> $projects
+ * @var \Macrolab\Time\TimeRuleSet   $rules
+ * @var string|null                  $error
  */
 
 use Macrolab\Csrf;
-use Macrolab\TimeRules;
+use Macrolab\Time\TimeRules;
 ?>
 <section class="card narrow">
     <h1>Change a time entry</h1>

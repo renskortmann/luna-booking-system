@@ -4,17 +4,17 @@
  * registration page and on its own by /api/time/month, which the day sheet
  * calls after each save so this list never disagrees with the grid above it.
  *
- * @var list<\Macrolab\TimeEntry>                        $entries
- * @var \DateTimeImmutable                               $month
- * @var string                                           $day        Y-m-d on the sheet above
- * @var string                                           $prevMonth
- * @var string                                           $nextMonth
- * @var int                                              $totalMinutes
- * @var list<array{project: string, minutes: int}>       $byProject
+ * @var list<\Macrolab\Time\TimeEntry>             $entries
+ * @var \DateTimeImmutable                         $month
+ * @var string                                     $day        Y-m-d on the sheet above
+ * @var string                                     $prevMonth
+ * @var string                                     $nextMonth
+ * @var int                                        $totalMinutes
+ * @var list<array{project: string, minutes: int}> $byProject
  */
 
 use Macrolab\Csrf;
-use Macrolab\TimeRules;
+use Macrolab\Time\TimeRules;
 ?>
 <section class="card" id="time-month">
     <h2><?= e($month->format('F Y')) ?></h2>

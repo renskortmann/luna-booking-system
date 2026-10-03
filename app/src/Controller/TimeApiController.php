@@ -9,10 +9,10 @@ use Macrolab\Csrf;
 use Macrolab\Http\HttpException;
 use Macrolab\Http\Request;
 use Macrolab\Http\Response;
-use Macrolab\TimeEntries;
-use Macrolab\TimeEntryException;
-use Macrolab\TimeEntryService;
-use Macrolab\TimeRules;
+use Macrolab\Time\TimeEntries;
+use Macrolab\Time\TimeEntryException;
+use Macrolab\Time\TimeEntryService;
+use Macrolab\Time\TimeRules;
 use Macrolab\View;
 
 /**

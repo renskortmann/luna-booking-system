@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Booking;
 
 use DateTimeImmutable;
+use Macrolab\Actor;
+use Macrolab\Audit;
+use Macrolab\Clock;
+use Macrolab\Db;
+use Macrolab\Http\HttpException;
 
 /**
  * Creating, changing and cancelling bookings: rule checks, the overlap check
@@ -170,7 +175,7 @@ final class BookingService
     public static function delete(Actor $actor, Booking $booking): void
     {
         if (!$actor->isAdmin) {
-            throw Http\HttpException::forbidden('Only the administrator can delete a booking outright.');
+            throw HttpException::forbidden('Only the administrator can delete a booking outright.');
         }
 
         Audit::log('booking_deleted', 'booking', $booking->id, [

@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Time;
 
+use Macrolab\Clock;
+use Macrolab\Db;
+use Macrolab\Http\HttpException;
 use RuntimeException;
 
 /**
@@ -77,7 +80,7 @@ final class Projects
             : self::find((int) $identifier);
 
         if ($project === null || !$project->isActive) {
-            throw Http\HttpException::badRequest('That project is not available for time registration.');
+            throw HttpException::badRequest('That project is not available for time registration.');
         }
 
         return $project;

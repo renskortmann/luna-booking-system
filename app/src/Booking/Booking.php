@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Booking;
 
 use DateTimeImmutable;
+use Macrolab\Clock;
 
 /**
  * One reservation. Times are UTC instants; the interval is half-open,

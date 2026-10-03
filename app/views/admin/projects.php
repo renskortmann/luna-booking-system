@@ -1,11 +1,11 @@
 <?php
 /**
- * @var list<\Macrolab\Project> $projects
- * @var string|null             $error
+ * @var list<\Macrolab\Time\Project> $projects
+ * @var string|null                  $error
  */
 
 use Macrolab\Csrf;
-use Macrolab\TimeRules;
+use Macrolab\Time\TimeRules;
 ?>
 <section class="card">
     <h1>Projects</h1>

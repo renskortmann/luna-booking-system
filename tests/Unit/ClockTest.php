@@ -68,4 +68,16 @@ final class ClockTest extends TestCase
         // Same UTC hour, but CET rather than CEST.
         self::assertSame('08:00', Clock::local(Clock::fromSql('2026-12-14 07:00:00'), 'H:i'));
     }
+
+    public function testDurationsReadAsWords(): void
+    {
+        self::assertSame('30 minutes', Clock::humanDuration(30));
+        self::assertSame('1 hour', Clock::humanDuration(60));
+        self::assertSame('4 hours', Clock::humanDuration(240));
+        self::assertSame('2 hours 30 minutes', Clock::humanDuration(150));
+        self::assertSame('1 day', Clock::humanDuration(24 * 60));
+        self::assertSame('3 days', Clock::humanDuration(3 * 24 * 60));
+        // Not a round number of days, so it stays in hours.
+        self::assertSame('25 hours', Clock::humanDuration(25 * 60));
+    }
 }

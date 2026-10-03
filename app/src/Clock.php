@@ -84,6 +84,28 @@ final class Clock
 
         return $times;
     }
+
+    /** A duration in words, for messages: "2 hours 30 minutes", "3 days". */
+    public static function humanDuration(int $minutes): string
+    {
+        if ($minutes < 60) {
+            return $minutes . ' minutes';
+        }
+
+        // Whole days read better than the hour count for long spans; anything
+        // that is not a round number of days stays in hours.
+        if ($minutes >= 24 * 60 && $minutes % (24 * 60) === 0) {
+            $days = intdiv($minutes, 24 * 60);
+
+            return $days . ($days === 1 ? ' day' : ' days');
+        }
+
+        $hours = intdiv($minutes, 60);
+        $rest = $minutes % 60;
+        $text = $hours . ($hours === 1 ? ' hour' : ' hours');
+
+        return $rest === 0 ? $text : $text . ' ' . $rest . ' minutes';
+    }
     /**
      * Parse a time submitted by a browser into a UTC instant.
      *

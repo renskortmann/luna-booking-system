@@ -6,13 +6,14 @@
  *
  * @var array<string, mixed>       $resource
  * @var list<array<string, mixed>> $machines
- * @var \Macrolab\Actor                $actor
- * @var \Macrolab\RuleSet              $rules
+ * @var \Macrolab\Actor            $actor
+ * @var \Macrolab\Booking\RuleSet  $rules
  * @var string                     $csrf
  * @var array<string, mixed>       $clientRules
  */
 
-use Macrolab\BookingRules;
+use Macrolab\Booking\BookingRules;
+use Macrolab\Clock;
 ?>
 <section class="card">
     <div class="calendar-head">
@@ -52,7 +53,7 @@ use Macrolab\BookingRules;
             Bookable <?= e(BookingRules::humanDays($rules->openDays)) ?>,
             <?= e($rules->openTime) ?>-<?= e($rules->closeTime) ?>,
             in blocks of <?= e($rules->slotMinutes) ?> minutes,
-            up to <?= e(BookingRules::humanDuration($rules->maxMinutes)) ?> at a time,
+            up to <?= e(Clock::humanDuration($rules->maxMinutes)) ?> at a time,
             <?= e($rules->maxAdvanceDays) ?> days ahead,
             <?= $rules->maxActivePerUser > 0
                 ? 'at most ' . e($rules->maxActivePerUser) . ' upcoming booking(s) each on this machine'

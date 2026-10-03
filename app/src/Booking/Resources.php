@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Booking;
 
+use Macrolab\Clock;
+use Macrolab\Db;
+use Macrolab\Http\HttpException;
+use Macrolab\Session;
 use RuntimeException;
 
 /**
@@ -134,7 +138,7 @@ final class Resources
                 : self::findBySlug($identifier));
 
         if ($row === null || (int) $row['is_active'] !== 1) {
-            throw Http\HttpException::badRequest('That machine is not available for booking.');
+            throw HttpException::badRequest('That machine is not available for booking.');
         }
 
         return $row;

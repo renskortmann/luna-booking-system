@@ -10,16 +10,16 @@ use Macrolab\Csrf;
 use Macrolab\Http\HttpException;
 use Macrolab\Http\Request;
 use Macrolab\Http\Response;
-use Macrolab\Project;
-use Macrolab\Projects;
+use Macrolab\Time\Project;
+use Macrolab\Time\Projects;
 use Macrolab\Session;
-use Macrolab\TimeEntries;
-use Macrolab\TimeEntry;
-use Macrolab\TimeEntryException;
-use Macrolab\TimeEntryPolicy;
-use Macrolab\TimeEntryService;
-use Macrolab\TimeRuleSet;
-use Macrolab\TimeRules;
+use Macrolab\Time\TimeEntries;
+use Macrolab\Time\TimeEntry;
+use Macrolab\Time\TimeEntryException;
+use Macrolab\Time\TimeEntryPolicy;
+use Macrolab\Time\TimeEntryService;
+use Macrolab\Time\TimeRuleSet;
+use Macrolab\Time\TimeRules;
 use Macrolab\View;
 
 /**

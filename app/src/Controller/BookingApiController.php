@@ -8,17 +8,17 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Macrolab\Actor;
 use Macrolab\Auth;
-use Macrolab\Booking;
-use Macrolab\BookingException;
-use Macrolab\BookingPolicy;
-use Macrolab\BookingService;
-use Macrolab\Bookings;
+use Macrolab\Booking\Booking;
+use Macrolab\Booking\BookingException;
+use Macrolab\Booking\BookingPolicy;
+use Macrolab\Booking\BookingService;
+use Macrolab\Booking\Bookings;
 use Macrolab\Clock;
 use Macrolab\Csrf;
 use Macrolab\Http\HttpException;
 use Macrolab\Http\Request;
 use Macrolab\Http\Response;
-use Macrolab\Resources;
+use Macrolab\Booking\Resources;
 use Macrolab\Users;
 
 /**

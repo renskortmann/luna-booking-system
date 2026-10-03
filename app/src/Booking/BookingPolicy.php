@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Booking;
 
+use Macrolab\Actor;
+use Macrolab\Audit;
 use Macrolab\Http\HttpException;
 
 /**

@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Time;
 
 use DateTimeImmutable;
+use Macrolab\Clock;
 
 /**
  * The time registration rules, and the converters that turn what a person typed
@@ -39,19 +40,19 @@ final class TimeRules
         if ($minutes <= 0) {
             $errors[] = 'Enter how long you worked.';
         } elseif ($minutes < $rules->minMinutes) {
-            $errors[] = 'The shortest entry is ' . BookingRules::humanDuration($rules->minMinutes) . '.';
+            $errors[] = 'The shortest entry is ' . Clock::humanDuration($rules->minMinutes) . '.';
         } elseif ($minutes > $rules->maxMinutesPerEntry) {
             // One entry is one project's time for one day, so this is a
             // per-project daily limit; splitting the time is not an option.
-            $errors[] = 'No more than ' . BookingRules::humanDuration($rules->maxMinutesPerEntry)
+            $errors[] = 'No more than ' . Clock::humanDuration($rules->maxMinutesPerEntry)
                 . ' can be logged on one project in a day.';
         }
 
         // Only worth checking when this entry is itself sane.
         if ($minutes > 0 && $minutesAlreadyOnDay + $minutes > $rules->maxMinutesPerDay) {
-            $errors[] = 'That would put ' . BookingRules::humanDuration($minutesAlreadyOnDay + $minutes)
-                . ' on one day, and the limit is ' . BookingRules::humanDuration($rules->maxMinutesPerDay)
-                . '. You have already logged ' . BookingRules::humanDuration($minutesAlreadyOnDay)
+            $errors[] = 'That would put ' . Clock::humanDuration($minutesAlreadyOnDay + $minutes)
+                . ' on one day, and the limit is ' . Clock::humanDuration($rules->maxMinutesPerDay)
+                . '. You have already logged ' . Clock::humanDuration($minutesAlreadyOnDay)
                 . ' that day.';
         }
 

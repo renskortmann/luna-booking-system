@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Booking;
 
 use DateTimeImmutable;
+use Macrolab\Clock;
+use Macrolab\Db;
 
 /**
  * Every query against the `bookings` table.

@@ -1,14 +1,14 @@
 <?php
 /**
- * @var list<array<string, mixed>> $machines
- * @var int                  $machineCount
- * @var list<\Macrolab\Booking>  $upcoming
- * @var int                  $userCount
- * @var int                  $suspended
- * @var int                  $noPassword
- * @var string               $authMode
- * @var int                  $recoveryLeft
- * @var string               $passwordAlgo
+ * @var list<array<string, mixed>>      $machines
+ * @var int                             $machineCount
+ * @var list<\Macrolab\Booking\Booking> $upcoming
+ * @var int                             $userCount
+ * @var int                             $suspended
+ * @var int                             $noPassword
+ * @var string                          $authMode
+ * @var int                             $recoveryLeft
+ * @var string                          $passwordAlgo
  */
 
 use Macrolab\Clock;

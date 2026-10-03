@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Macrolab\Controller;
 
 use Macrolab\Auth;
-use Macrolab\Bookings;
+use Macrolab\Booking\Bookings;
 use Macrolab\Clock;
 use Macrolab\Csrf;
 use Macrolab\Http\Request;
 use Macrolab\Http\Response;
-use Macrolab\Resources;
-use Macrolab\RuleSet;
+use Macrolab\Booking\Resources;
+use Macrolab\Booking\RuleSet;
 use Macrolab\Session;
 use Macrolab\View;
 

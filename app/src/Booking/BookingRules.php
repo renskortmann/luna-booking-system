@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Macrolab;
+namespace Macrolab\Booking;
 
 use DateTimeImmutable;
+use Macrolab\Clock;
 
 /**
  * The booking rules, as pure functions: same inputs, same answer, no database
@@ -48,11 +49,11 @@ final class BookingRules
 
         // --- duration -------------------------------------------------------
         if ($durationMinutes < $rules->minMinutes) {
-            $errors[] = 'The shortest booking is ' . self::humanDuration($rules->minMinutes) . '.';
+            $errors[] = 'The shortest booking is ' . Clock::humanDuration($rules->minMinutes) . '.';
         }
 
         if ($durationMinutes > $rules->maxMinutes) {
-            $errors[] = 'The longest booking is ' . self::humanDuration($rules->maxMinutes) . '.';
+            $errors[] = 'The longest booking is ' . Clock::humanDuration($rules->maxMinutes) . '.';
         }
 
         if ($durationMinutes % $rules->slotMinutes !== 0) {
@@ -146,32 +147,11 @@ final class BookingRules
         $deadline = $startUtc->modify('-' . $rules->minChangeNoticeMinutes . ' minutes');
 
         if ($rules->minChangeNoticeMinutes > 0 && $now > $deadline) {
-            return 'Bookings can only be changed up to ' . self::humanDuration($rules->minChangeNoticeMinutes)
+            return 'Bookings can only be changed up to ' . Clock::humanDuration($rules->minChangeNoticeMinutes)
                 . ' before they start. Please ask the lab administrator.';
         }
 
         return null;
-    }
-
-    public static function humanDuration(int $minutes): string
-    {
-        if ($minutes < 60) {
-            return $minutes . ' minutes';
-        }
-
-        // Whole days read better than the hour count once a booking runs that
-        // long; anything that is not a round number of days stays in hours.
-        if ($minutes >= 24 * 60 && $minutes % (24 * 60) === 0) {
-            $days = intdiv($minutes, 24 * 60);
-
-            return $days . ($days === 1 ? ' day' : ' days');
-        }
-
-        $hours = intdiv($minutes, 60);
-        $rest = $minutes % 60;
-        $text = $hours . ($hours === 1 ? ' hour' : ' hours');
-
-        return $rest === 0 ? $text : $text . ' ' . $rest . ' minutes';
     }
 
     /**

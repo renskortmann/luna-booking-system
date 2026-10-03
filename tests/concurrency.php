@@ -15,10 +15,10 @@ declare(strict_types=1);
  */
 
 use Macrolab\Actor;
-use Macrolab\BookingException;
+use Macrolab\Booking\BookingException;
 use Macrolab\Config;
 use Macrolab\Db;
-use Macrolab\Resources;
+use Macrolab\Booking\Resources;
 use Macrolab\Users;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -39,7 +39,7 @@ $start = new DateTimeImmutable('2026-09-14 09:00:00', new DateTimeZone('UTC'));
 $end = new DateTimeImmutable('2026-09-14 10:00:00', new DateTimeZone('UTC'));
 
 try {
-    $booking = \Macrolab\BookingService::create(
+    $booking = \Macrolab\Booking\BookingService::create(
         Actor::forAdmin(),      // the admin path skips the rule checks, not the overlap check
         Resources::primaryId(),
         $start,
